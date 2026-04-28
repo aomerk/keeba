@@ -1,0 +1,32 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - gosec
+    - revive
+    - staticcheck
+    - errcheck
+    - govet
+    - ineffassign
+    - unused
+  exclusions:
+    rules:
+      # CLI tool that intentionally takes file paths from user input.
+      - linters: [gosec]
+        text: "G304"
+      # Wiki artifacts (_meta.json, _xref/, scaffolded dirs) are world-readable
+      # by design, not secrets — 0o644/0o755 is correct here.
+      - linters: [gosec]
+        text: "G306|G301"
+      # Tests intentionally exercise filesystem APIs without paranoid perms.
+      - linters: [gosec]
+        path: _test\.go
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
