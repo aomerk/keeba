@@ -1,0 +1,40 @@
+---
+tags: [meta, getting-started]
+last_verified: {{.LastVerified}}
+status: current
+---
+
+# Getting started
+
+> First page in this wiki. Replace me with something real.
+
+This page exists so `keeba search` and `keeba bench` have something to find
+on day zero. Once you start writing real pages, delete this one.
+
+## What to write next
+
+1. Open `entities/` and create one page per service / product / customer
+   you care about. Use the [SCHEMA](../SCHEMA.md) as a template.
+2. Open `concepts/` and document the architectural choices that aren't
+   obvious from the code (why X over Y, what assumption Z relies on).
+3. When something breaks, open `investigations/<YYYY-MM-DD>-<slug>.md`.
+4. When you make a durable choice, open `decisions/<slug>.md`.
+
+## The agent loop
+
+| Time | What | Tool |
+|---|---|---|
+| As you work | Write pages by hand | editor + `keeba lint --staged` |
+| Daily / weekly | Digest git + Slack into pages | the agent prompts in `agents/` |
+| Every commit | Re-index for cheap agent reads | `keeba meta` (CI rebuilds it) |
+| When you ask "what is X?" | BM25 over the wiki | `keeba search "X"` |
+| When using Claude Code | Same query via MCP | `.mcp.json` is already wired |
+
+## Sources
+
+- `keeba init` scaffolded this on {{.LastVerified}}.
+
+## See Also
+
+- [[index]]
+- [[SCHEMA]]

@@ -1,0 +1,10 @@
+# keeba runtime artifacts (regenerable)
+.keeba-cache/
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Local env
+.env
