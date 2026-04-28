@@ -115,6 +115,49 @@ func TestClassifyNoise(t *testing.T) {
 	}
 }
 
+// TestClassifyDoesNotMatchKeywordsInBody pins the v0.3.0-alpha regression:
+// a commit body that *describes* the heuristic ("classifies by BREAKING:,
+// incident keywords, ADR markers") was wrongly flagged as breaking +
+// incident + decision. Subject is the only signal-rich place; bodies dilute.
+func TestClassifyDoesNotMatchKeywordsInBody(t *testing.T) {
+	c := mkCommit(
+		"feat: keeba init --from-repo, mcp install, ingest git --execute",
+		`Three user-facing wins.
+## keeba ingest git --execute
+Walks git log. Classifies each commit by regex (BREAKING:, incident
+keywords, ADR markers, major-version dep bumps) and writes log/investigations.
+`,
+	)
+	got := Classify(c)
+	if len(got) != 0 {
+		t.Fatalf("expected no class for prose-mention of keywords; got %+v", got)
+	}
+}
+
+// TestClassifyBreakingMatchesAtSubjectStart confirms the tightened regex
+// still matches the canonical "BREAKING:" / "feat!:" prefix forms.
+func TestClassifyBreakingMatchesAtSubjectStart(t *testing.T) {
+	cases := []string{
+		"BREAKING: rename Foo",
+		"feat!: drop legacy API",
+		"feat(api)!: remove /v1",
+	}
+	for _, subj := range cases {
+		t.Run(subj, func(t *testing.T) {
+			got := Classify(mkCommit(subj, ""))
+			found := false
+			for _, a := range got {
+				if a.Class == ClassBreaking {
+					found = true
+				}
+			}
+			if !found {
+				t.Fatalf("expected breaking for %q, got %+v", subj, got)
+			}
+		})
+	}
+}
+
 func TestIngestGitDryRunSkipsFilesystem(t *testing.T) {
 	wiki := t.TempDir()
 	if err := os.WriteFile(filepath.Join(wiki, "log.md"), []byte("# log\n"), 0o644); err != nil {

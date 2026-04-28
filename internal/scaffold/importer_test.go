@@ -115,3 +115,58 @@ func TestImportNonexistentRepoErrors(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
+// TestImportPageWithBodyTitleProducesLintCleanOutput pins the v0.3.0-alpha
+// regression: when the source had its own `# Title`, the wrapper produced
+// `> summary\n# Title` (summary before title), which fails the lint title
+// check. The fix must always emit `# Title\n> summary\n…body`.
+func TestImportPageWithBodyTitleProducesLintCleanOutput(t *testing.T) {
+	wiki := t.TempDir()
+	repo := t.TempDir()
+	writeFile(t, filepath.Join(repo, "README.md"),
+		"# my-app\n\nA small app that does X. It uses Y for Z.\n\n## Architecture\n\nfoo.\n")
+	if _, err := ImportFromRepo(wiki, repo, "my-app"); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(filepath.Join(wiki, "concepts", "readme.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(body)
+	titleIdx := strings.Index(got, "# my-app")
+	summaryIdx := strings.Index(got, "> ")
+	if titleIdx == -1 || summaryIdx == -1 {
+		t.Fatalf("missing title or summary marker:\n%s", got)
+	}
+	if titleIdx > summaryIdx {
+		t.Fatalf("title must precede summary; got summary at %d, title at %d", summaryIdx, titleIdx)
+	}
+	// Ensure the title appears exactly once (no duplication).
+	if strings.Count(got, "# my-app\n") != 1 {
+		t.Fatalf("title appears %d times; want 1\n%s", strings.Count(got, "# my-app\n"), got)
+	}
+}
+
+func TestImportWalksSingularDocDir(t *testing.T) {
+	wiki := t.TempDir()
+	repo := t.TempDir()
+	writeFile(t, filepath.Join(repo, "doc", "layernorm.md"), "# layernorm\n\n> note.\n")
+	if _, err := ImportFromRepo(wiki, repo, "x"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(wiki, "concepts", "doc-layernorm.md")); err != nil {
+		t.Fatalf("expected doc/ to be walked: %v", err)
+	}
+}
+
+func TestImportWalksNestedReadmes(t *testing.T) {
+	wiki := t.TempDir()
+	repo := t.TempDir()
+	writeFile(t, filepath.Join(repo, "scripts", "README.md"), "# scripts\n\n> helpers.\n")
+	if _, err := ImportFromRepo(wiki, repo, "x"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(wiki, "concepts", "scripts-readme.md")); err != nil {
+		t.Fatalf("expected scripts/README.md to be imported: %v", err)
+	}
+}
