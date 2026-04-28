@@ -47,29 +47,32 @@ echo "==> keeba ingest git --dry-run (prints template)"
 "$BIN" ingest git --dry-run | head -3
 
 echo "==> keeba index (no API key, expect actionable error)"
-if "$BIN" index --wiki-root "$WIKI" 2>&1 | grep -qE "VOYAGE_API_KEY|OPENAI_API_KEY|not set"; then
+idx_out=$("$BIN" index --wiki-root "$WIKI" 2>&1 || true)
+if echo "$idx_out" | grep -qE "VOYAGE_API_KEY|OPENAI_API_KEY|not set"; then
   echo "  ok — index reports missing key cleanly"
 else
   echo "FAIL: keeba index didn't surface a usable error without an API key"
-  "$BIN" index --wiki-root "$WIKI" || true
+  echo "$idx_out"
   exit 1
 fi
 
 echo "==> keeba search --vector (no store yet, expect actionable error)"
-if "$BIN" search --vector "anything" --wiki-root "$WIKI" 2>&1 | grep -qE "VOYAGE_API_KEY|OPENAI_API_KEY|not set|keeba index"; then
+vec_out=$("$BIN" search --vector "anything" --wiki-root "$WIKI" 2>&1 || true)
+if echo "$vec_out" | grep -qE "VOYAGE_API_KEY|OPENAI_API_KEY|not set|keeba index"; then
   echo "  ok — vector search reports missing prerequisite cleanly"
 else
   echo "FAIL: keeba search --vector didn't surface a usable error"
-  "$BIN" search --vector "anything" --wiki-root "$WIKI" || true
+  echo "$vec_out"
   exit 1
 fi
 
 echo "==> keeba bench --llm anthropic (no key, expect actionable error)"
-if ANTHROPIC_API_KEY= "$BIN" bench --llm anthropic --wiki-root "$WIKI" --raw "$WIKI" 2>&1 | grep -q "ANTHROPIC_API_KEY"; then
+llm_out=$(ANTHROPIC_API_KEY= "$BIN" bench --llm anthropic --wiki-root "$WIKI" --raw "$WIKI" 2>&1 || true)
+if echo "$llm_out" | grep -q "ANTHROPIC_API_KEY"; then
   echo "  ok — LLM bench reports missing key cleanly"
 else
   echo "FAIL: --llm anthropic didn't surface a missing-key error"
-  ANTHROPIC_API_KEY= "$BIN" bench --llm anthropic --wiki-root "$WIKI" --raw "$WIKI" || true
+  echo "$llm_out"
   exit 1
 fi
 
