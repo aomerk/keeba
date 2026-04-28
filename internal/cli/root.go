@@ -27,6 +27,7 @@ func NewRoot() *cobra.Command {
 	root.AddCommand(newDriftCmd())
 	root.AddCommand(newMetaCmd())
 	root.AddCommand(newInitCmd())
+	root.AddCommand(newSyncCmd())
 	root.AddCommand(newSearchCmd())
 	root.AddCommand(newIndexCmd())
 	root.AddCommand(newIngestCmd())

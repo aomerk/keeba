@@ -170,3 +170,105 @@ func TestImportWalksNestedReadmes(t *testing.T) {
 		t.Fatalf("expected scripts/README.md to be imported: %v", err)
 	}
 }
+
+// ---- sync ----
+
+func TestSyncRefreshesPristinePages(t *testing.T) {
+	wiki := t.TempDir()
+	repo := t.TempDir()
+	writeFile(t, filepath.Join(repo, "README.md"), "# v1\n\n> first version of the readme.\n\n## Sources\n\n## See Also\n")
+	if _, err := ImportFromRepo(wiki, repo, "app"); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := os.ReadFile(filepath.Join(wiki, "concepts", "readme.md"))
+	if !strings.Contains(string(first), "# v1") {
+		t.Fatalf("first import missing # v1\n%s", first)
+	}
+
+	// Source updates.
+	writeFile(t, filepath.Join(repo, "README.md"), "# v2\n\n> second version with new content.\n\n## Sources\n\n## See Also\n")
+	res, err := SyncFromRepo(wiki, repo, "app")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Imported) != 1 || res.Imported[0] != "concepts/readme.md" {
+		t.Fatalf("expected sync to refresh readme.md, got %+v", res)
+	}
+	got, _ := os.ReadFile(filepath.Join(wiki, "concepts", "readme.md"))
+	if !strings.Contains(string(got), "# v2") {
+		t.Fatalf("sync did not pick up v2 source:\n%s", got)
+	}
+}
+
+func TestSyncPreservesEditedPages(t *testing.T) {
+	wiki := t.TempDir()
+	repo := t.TempDir()
+	writeFile(t, filepath.Join(repo, "README.md"), "# original\n\n> first.\n\n## Sources\n\n## See Also\n")
+	if _, err := ImportFromRepo(wiki, repo, "app"); err != nil {
+		t.Fatal(err)
+	}
+	// User edits the page.
+	original, _ := os.ReadFile(filepath.Join(wiki, "concepts", "readme.md"))
+	edited := strings.Replace(string(original), "# original", "# Heavily edited by human", 1)
+	if err := os.WriteFile(filepath.Join(wiki, "concepts", "readme.md"), []byte(edited), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Source updates.
+	writeFile(t, filepath.Join(repo, "README.md"), "# upstream-changed\n\n> second.\n\n## Sources\n\n## See Also\n")
+	res, err := SyncFromRepo(wiki, repo, "app")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Edited) != 1 || res.Edited[0] != "concepts/readme.md" {
+		t.Fatalf("expected sync to mark readme.md as edited, got %+v", res)
+	}
+	got, _ := os.ReadFile(filepath.Join(wiki, "concepts", "readme.md"))
+	if !strings.Contains(string(got), "# Heavily edited by human") {
+		t.Fatalf("sync clobbered the user's edits:\n%s", got)
+	}
+}
+
+func TestSyncImportsNewSourceFiles(t *testing.T) {
+	wiki := t.TempDir()
+	repo := t.TempDir()
+	writeFile(t, filepath.Join(repo, "README.md"), "# A\n\n> A.\n")
+	if _, err := ImportFromRepo(wiki, repo, "app"); err != nil {
+		t.Fatal(err)
+	}
+
+	// New file appears in source.
+	writeFile(t, filepath.Join(repo, "ARCHITECTURE.md"), "# Arch\n\n> Arch.\n")
+	res, err := SyncFromRepo(wiki, repo, "app")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotSlugs := map[string]bool{}
+	for _, s := range res.Imported {
+		gotSlugs[s] = true
+	}
+	if !gotSlugs["concepts/architecture.md"] {
+		t.Fatalf("expected new architecture.md to be imported on sync, got %+v", res)
+	}
+}
+
+func TestSyncSkipsManualPages(t *testing.T) {
+	wiki := t.TempDir()
+	repo := t.TempDir()
+	writeFile(t, filepath.Join(repo, "README.md"), "# from source\n\n> ...\n")
+	// Manual page (no keeba_pristine_hash) collides with the slug.
+	manualBody := "---\ntags: [manual]\nlast_verified: 2026-04-28\nstatus: current\n---\n\n# Hand-curated\n\n> Manual.\n"
+	writeFile(t, filepath.Join(wiki, "concepts", "readme.md"), manualBody)
+
+	res, err := SyncFromRepo(wiki, repo, "app")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Edited) != 1 {
+		t.Fatalf("manual page should be marked Edited, got %+v", res)
+	}
+	got, _ := os.ReadFile(filepath.Join(wiki, "concepts", "readme.md"))
+	if string(got) != manualBody {
+		t.Fatalf("manual page was clobbered:\n%s", got)
+	}
+}
