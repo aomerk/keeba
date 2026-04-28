@@ -43,17 +43,19 @@ type rpcResponse struct {
 
 // Server is a stdio MCP server backed by a BM25 search index.
 type Server struct {
-	cfg config.KeebaConfig
-	idx *search.Index
+	cfg     config.KeebaConfig
+	idx     *search.Index
+	Version string // surfaced as serverInfo.version on initialize
 }
 
 // New builds the BM25 index up-front so /tools/call queries are fast.
+// The default Version is "dev"; CLI callers should set it from cli.Version.
 func New(cfg config.KeebaConfig) (*Server, error) {
 	idx, err := search.Build(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("build index: %w", err)
 	}
-	return &Server{cfg: cfg, idx: idx}, nil
+	return &Server{cfg: cfg, idx: idx, Version: "dev"}, nil
 }
 
 // Serve reads JSON-RPC frames from r (one JSON object per line, per MCP's
@@ -105,11 +107,15 @@ func (s *Server) Serve(ctx context.Context, r io.Reader, w io.Writer) error {
 func (s *Server) dispatch(req rpcRequest) rpcResponse {
 	switch req.Method {
 	case "initialize":
+		v := s.Version
+		if v == "" {
+			v = "dev"
+		}
 		return rpcResponse{Result: map[string]any{
 			"protocolVersion": protocolVersion,
 			"serverInfo": map[string]string{
 				"name":    "keeba",
-				"version": "0.1.0-alpha",
+				"version": v,
 			},
 			"capabilities": map[string]any{
 				"tools": map[string]any{},
