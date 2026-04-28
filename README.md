@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.svg" width="180" alt="keeba">
+<img src="assets/logo.svg" width="520" alt="keeba — bridge any codebase into your AI tools">
 
 # keeba
 
