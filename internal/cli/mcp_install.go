@@ -82,6 +82,13 @@ func installClaudeCode(cmd *cobra.Command, wikiRoot, scope string) error {
 	if scope == "project" {
 		scopeFlag = "project"
 	}
+	// Idempotency: if keeba is already in this scope's config, no-op. The
+	// `claude mcp` CLI errors on duplicate adds, so we check first.
+	if claudeMCPHasKeeba(bin, scopeFlag) {
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+			"keeba MCP already installed in Claude Code (%s scope) — no change\n", scopeFlag)
+		return nil
+	}
 	args := []string{
 		"mcp", "add", "keeba",
 		"--scope", scopeFlag,
@@ -95,6 +102,27 @@ func installClaudeCode(cmd *cobra.Command, wikiRoot, scope string) error {
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 		"installed keeba MCP into Claude Code (%s scope) → serves %s\n", scopeFlag, wikiRoot)
 	return nil
+}
+
+// claudeMCPHasKeeba returns true when `claude mcp list` already includes a
+// server named "keeba" — covering both user-scope and project-scope configs.
+// Conservatively returns false on any error so we still attempt the add.
+func claudeMCPHasKeeba(bin, _ string) bool {
+	out, err := exec.Command(bin, "mcp", "list").Output() //nolint:gosec
+	if err != nil {
+		return false
+	}
+	for _, line := range stringSplit(string(out), "\n") {
+		// `claude mcp list` prints `keeba: <command> [...]` per server.
+		if line == "" {
+			continue
+		}
+		// Match start-of-line "keeba" up to a colon or whitespace.
+		if len(line) >= 6 && line[:5] == "keeba" && (line[5] == ':' || line[5] == ' ' || line[5] == '\t') {
+			return true
+		}
+	}
+	return false
 }
 
 type cursorConfig struct {
@@ -167,32 +195,44 @@ func installCodex(cmd *cobra.Command, wikiRoot string) error {
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return err
 	}
-	bin, err := os.Executable()
-	if err != nil {
-		bin = "keeba"
+	// Prefer the keeba binary on PATH so the user's package-managed install
+	// is what Codex launches; fall back to the currently-running executable.
+	bin, lookErr := exec.LookPath("keeba")
+	if lookErr != nil {
+		exe, ferr := os.Executable()
+		if ferr != nil {
+			return fmt.Errorf("locate keeba binary: %w / %w", lookErr, ferr)
+		}
+		bin = exe
 	}
+	// Schema verified against openai/codex codex-rs/core/config.schema.json
+	// (RawMcpServerConfig): command (string), args (array of strings).
 	entry := fmt.Sprintf(`
 [mcp_servers.keeba]
 command = %q
 args = ["mcp", "serve", "--wiki-root", %q]
 `, bin, wikiRoot)
 
-	if existing, err := os.ReadFile(target); err == nil { //nolint:gosec
-		if !containsKeebaCodex(string(existing)) {
-			merged := string(existing)
-			if !endsWithNewline(merged) {
-				merged += "\n"
-			}
-			merged += entry
-			if err := os.WriteFile(target, []byte(merged), 0o644); err != nil {
-				return err
-			}
+	switch existing, err := os.ReadFile(target); { //nolint:gosec
+	case err == nil:
+		if containsKeebaCodex(string(existing)) {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"keeba MCP already in %s — no change\n", target)
+			return nil
 		}
-	} else if os.IsNotExist(err) {
+		merged := string(existing)
+		if !endsWithNewline(merged) {
+			merged += "\n"
+		}
+		merged += entry
+		if err := os.WriteFile(target, []byte(merged), 0o644); err != nil {
+			return err
+		}
+	case os.IsNotExist(err):
 		if err := os.WriteFile(target, []byte(entry), 0o644); err != nil {
 			return err
 		}
-	} else {
+	default:
 		return err
 	}
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(),
