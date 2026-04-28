@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 280" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 240" role="img" aria-labelledby="title desc">
   <title id="title">keeba horizontal logo lockup</title>
-  <desc id="desc">A futuristic horizontal logo for keeba: codebase pixels compress through a bridge into AI context, with a cyan-to-violet gradient icon and clean wordmark.</desc>
+  <desc id="desc">A futuristic horizontal logo for keeba with a cyan-to-violet gradient icon and clean wordmark.</desc>
   <defs>
     <linearGradient id="keebaGradient" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#22D3EE"/>
@@ -24,12 +24,12 @@
     </filter>
   </defs>
 
-  <rect width="1120" height="280" rx="0" fill="#070B12"/>
+  <rect width="1120" height="240" rx="0" fill="#070B12"/>
 
   <!-- Subtle background grid -->
   <g opacity="0.16" stroke="#263244" stroke-width="1">
-    <path d="M40 48H1080M40 232H1080"/>
-    <path d="M96 28V252M1024 28V252"/>
+    <path d="M40 44H1080M40 196H1080"/>
+    <path d="M96 24V216M1024 24V216"/>
   </g>
 
   <!-- Icon: raw codebase bytes -> structured bridge -> AI-ready context -->
@@ -74,8 +74,5 @@
   <!-- Wordmark -->
   <g transform="translate(570 0)" filter="url(#wordGlow)">
     <text x="0" y="151" fill="url(#textGradient)" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="104" font-weight="650" letter-spacing="-4">keeba</text>
-    <text x="4" y="198" fill="#94A3B8" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="28" font-weight="450" letter-spacing="6">codebase</text>
-    <text x="190" y="198" fill="#22D3EE" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="32" font-weight="600">→</text>
-    <text x="238" y="198" fill="#8B5CF6" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="28" font-weight="500" letter-spacing="6">AI</text>
   </g>
 </svg>
