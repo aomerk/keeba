@@ -28,5 +28,6 @@ func newMCPCmd() *cobra.Command {
 			return srv.Serve(cmd.Context(), os.Stdin, os.Stdout)
 		},
 	})
+	cmd.AddCommand(newMCPInstallCmd())
 	return cmd
 }

@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"github.com/aomerk/keeba/internal/ingest"
 )
 
 //go:embed ingest_templates/*.md
@@ -21,20 +23,38 @@ var supportedIngestSources = map[string]string{
 }
 
 func newIngestCmd() *cobra.Command {
-	var dryRun bool
+	var (
+		dryRun  bool
+		execute bool
+		repo    string
+		since   string
+	)
 	cmd := &cobra.Command{
 		Use:   "ingest SOURCE",
-		Short: "Print the agent prompt template for a given ingest source.",
-		Long: `Print the agent prompt template that drives an ingest from SOURCE.
+		Short: "Run an ingest agent or write its prompt template.",
+		Long: `By default, drops the agent prompt template into agents/<source>-ingest.md
+for an external runner (Claude Code, Cursor, Codex, claude.ai routine).
 
-v0.1 ships prompt templates only — the actual ingest is run by your AI tool
-of choice (Claude Code, Cursor, Codex, claude.ai routine). This command
-prints (or writes) the template so you can hand it to your agent runner.
+With --execute, runs the heuristic in-process instead. v0.3 ships --execute
+for git only: it walks ` + "`git log`" + ` for the configured repos, classifies
+commits by regex (BREAKING:, incident keywords, ADR markers, major dep
+bumps), and writes/appends to log.md, investigations/, decisions/.
 
-v0.2 adds direct ingest execution.`,
+Examples:
+  keeba ingest git --dry-run                # print the template
+  keeba ingest git                          # write template to agents/
+  keeba ingest git --execute --repo .       # actually digest the last 7 days
+  keeba ingest git --execute --repo ../my-app --since 30.days.ago --dry-run`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			source := args[0]
+			if execute {
+				if source != "git" {
+					return fmt.Errorf("--execute is only wired for git in v0.3; got %q", source)
+				}
+				return runGitIngest(cmd, repo, since, dryRun)
+			}
+
 			path, ok := supportedIngestSources[source]
 			if !ok {
 				return fmt.Errorf("unknown source %q (supported: git, slack)", source)
@@ -70,6 +90,44 @@ v0.2 adds direct ingest execution.`,
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "print the template instead of writing it")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "preview without writing (works with --execute too)")
+	cmd.Flags().BoolVar(&execute, "execute", false, "run the ingest heuristic in-process instead of writing the template")
+	cmd.Flags().StringVar(&repo, "repo", ".", "path to the source repo (for --execute)")
+	cmd.Flags().StringVar(&since, "since", "7.days.ago", "git --since spec for --execute")
 	return cmd
+}
+
+func runGitIngest(cmd *cobra.Command, repo, since string, dryRun bool) error {
+	cfg, err := loadCfg(cmd)
+	if err != nil {
+		return err
+	}
+	repoAbs, err := filepath.Abs(repo)
+	if err != nil {
+		return err
+	}
+	actions, err := ingest.Git(cfg.WikiRoot, repoAbs, since, dryRun)
+	if err != nil {
+		return err
+	}
+	if len(actions) == 0 {
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "no durable signal in %s since %s\n", repoAbs, since)
+		return nil
+	}
+	verb := "wrote"
+	if dryRun {
+		verb = "would write"
+	}
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s %d action(s):\n", verb, len(actions))
+	for _, a := range actions {
+		switch {
+		case a.AppendPath != "":
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  · append %-12s %s — %s\n",
+				a.AppendPath, a.Class, a.Commit.SHA[:7])
+		case a.TargetPath != "":
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  · create %-12s %s — %s\n",
+				a.TargetPath, a.Class, a.Commit.SHA[:7])
+		}
+	}
+	return nil
 }
