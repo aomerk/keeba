@@ -88,20 +88,37 @@ That's the byte-count bench. The LLM bench (`keeba bench --llm anthropic`) gets 
 
 ## Architecture (one diagram, no more)
 
-```
-        your codebase                        you / your team
-         (READMEs,                            (curating
-         docs/, CLAUDE.md)                    pages by hand)
-              │                                    │
-              ▼                                    ▼
-     keeba init  ──→   wiki/  ←──   keeba lint / drift / meta
-     keeba sync         │
-                        │
-        keeba search ◄──┤──► keeba mcp serve ──► Claude Code
-        keeba bench     │                         Cursor
-        keeba ingest ───┘                         Codex
-                                                  Cline
-                                                  ...anything that speaks MCP
+```mermaid
+flowchart LR
+  classDef src fill:#1f2937,color:#fff,stroke:#0ea5e9,stroke-width:1.5px
+  classDef hum fill:#7c2d12,color:#fff,stroke:#fb923c,stroke-width:1.5px
+  classDef wiki fill:#064e3b,color:#fff,stroke:#34d399,stroke-width:2px
+  classDef cmd fill:#1e1b4b,color:#fff,stroke:#a78bfa,stroke-width:1.5px
+  classDef tool fill:#3f1d38,color:#fff,stroke:#f472b6,stroke-width:1.5px
+
+  src["📁 Your codebase<br/>READMEs · docs/ · CLAUDE.md"]:::src
+  hum["👤 You + your team<br/>curating pages by hand"]:::hum
+  wiki[("📚 wiki/<br/>plain markdown<br/>schema-enforced")]:::wiki
+
+  init["keeba init / sync --from-repo"]:::cmd
+  rules["keeba lint · drift · meta"]:::cmd
+  query["keeba search · bench · ingest"]:::cmd
+  mcp["keeba mcp serve<br/>(stdio MCP)"]:::cmd
+
+  cc["Claude Code"]:::tool
+  cu["Cursor"]:::tool
+  co["Codex"]:::tool
+  any["…anything that speaks MCP"]:::tool
+
+  src --> init --> wiki
+  hum --> wiki
+  wiki <--> rules
+  wiki --> query
+  wiki --> mcp
+  mcp --> cc
+  mcp --> cu
+  mcp --> co
+  mcp --> any
 ```
 
 `wiki/` is plain markdown. Schema is enforced (`keeba lint`), not assumed. Citations are verified (`keeba drift`). MCP is the wire format. No vendor lock at any layer.
