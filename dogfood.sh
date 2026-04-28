@@ -46,6 +46,33 @@ test -d "$WIKI/_bench" || { echo "FAIL: _bench/ missing"; exit 1; }
 echo "==> keeba ingest git --dry-run (prints template)"
 "$BIN" ingest git --dry-run | head -3
 
+echo "==> keeba index (no API key, expect actionable error)"
+if "$BIN" index --wiki-root "$WIKI" 2>&1 | grep -qE "VOYAGE_API_KEY|OPENAI_API_KEY|not set"; then
+  echo "  ok — index reports missing key cleanly"
+else
+  echo "FAIL: keeba index didn't surface a usable error without an API key"
+  "$BIN" index --wiki-root "$WIKI" || true
+  exit 1
+fi
+
+echo "==> keeba search --vector (no store yet, expect actionable error)"
+if "$BIN" search --vector "anything" --wiki-root "$WIKI" 2>&1 | grep -qE "VOYAGE_API_KEY|OPENAI_API_KEY|not set|keeba index"; then
+  echo "  ok — vector search reports missing prerequisite cleanly"
+else
+  echo "FAIL: keeba search --vector didn't surface a usable error"
+  "$BIN" search --vector "anything" --wiki-root "$WIKI" || true
+  exit 1
+fi
+
+echo "==> keeba bench --llm anthropic (no key, expect actionable error)"
+if ANTHROPIC_API_KEY= "$BIN" bench --llm anthropic --wiki-root "$WIKI" --raw "$WIKI" 2>&1 | grep -q "ANTHROPIC_API_KEY"; then
+  echo "  ok — LLM bench reports missing key cleanly"
+else
+  echo "FAIL: --llm anthropic didn't surface a missing-key error"
+  ANTHROPIC_API_KEY= "$BIN" bench --llm anthropic --wiki-root "$WIKI" --raw "$WIKI" || true
+  exit 1
+fi
+
 echo "==> keeba mcp serve (initialize over stdio)"
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize"}' \
   | "$BIN" mcp serve --wiki-root "$WIKI" \
