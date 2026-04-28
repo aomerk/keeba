@@ -90,15 +90,26 @@ drift:
 
 ## Bench number
 
-From the bundled `dogfood.sh` against a freshly-scaffolded wiki:
+Real number from `examples/llm-c/` (Karpathy's `llm.c`, ~1.9 MB):
 
 ```
-keeba: 126.8× cheaper, 27.5× faster (5 questions)
+keeba: 2465.9× cheaper, 80.1× faster (5 questions; byte-count mode)
 ```
 
-That's a tiny corpus, so the absolute number is mostly a sanity check —
-the headline ratios trend more usefully as the wiki accumulates pages.
-Track yours by checking `_bench/<date>.md` into git.
+Full output checked in at [`examples/llm-c/_bench/2026-04-28.md`](examples/llm-c/_bench/2026-04-28.md). The recipe to reproduce is in [`examples/llm-c/README.md`](examples/llm-c/README.md).
+
+For the LLM-driven bench (each question answered twice — wiki context vs raw context — by Claude, with self-rated confidence):
+
+```bash
+ANTHROPIC_API_KEY=… keeba bench --llm anthropic --raw ../your-corpus
+```
+
+Token counts in LLM mode come from the API response, not estimates.
+
+## Search modes
+
+- **BM25 (default)** — pure-Go keyword search, no API key, no infra. `keeba search "query"`.
+- **Vector** — embed every page once with `keeba index`, then `keeba search --vector "query"` reads the persisted store. Providers: Voyage AI (`VOYAGE_API_KEY`, default), OpenAI (`OPENAI_API_KEY`), `local` (deferred to v0.3 — cybertron + ONNX MiniLM under the same interface).
 
 ## Status
 
