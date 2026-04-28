@@ -6,7 +6,7 @@ import (
 )
 
 // Version is the CLI's user-facing version string.
-const Version = "v0.1.0-alpha"
+const Version = "v0.2.0-alpha"
 
 // NewRoot returns a freshly-built root command. Each call yields an
 // independent tree, which keeps test cases isolated.
