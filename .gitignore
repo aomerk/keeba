@@ -1,0 +1,30 @@
+# Built binaries (top-level only — don't shadow cmd/keeba/)
+/keeba
+/bin/
+*.exe
+*.exe~
+
+# Test artifacts
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# Build/cache
+/bin/
+/dist/
+
+# keeba runtime artifacts
+.keeba-cache/
+*.kbdb
