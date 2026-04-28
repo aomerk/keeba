@@ -25,6 +25,7 @@ func newMCPCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			srv.Version = Version
 			return srv.Serve(cmd.Context(), os.Stdin, os.Stdout)
 		},
 	})
