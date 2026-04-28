@@ -51,10 +51,15 @@ func ImportFromRepo(wikiRoot, repoPath string, repoName string) (ImportResult, e
 		}
 	}
 
-	// 2. docs/** — flatten paths into hyphenated slugs under concepts/.
-	docsRoot := filepath.Join(repoAbs, "docs")
-	if st, err := os.Stat(docsRoot); err == nil && st.IsDir() {
-		err := filepath.WalkDir(docsRoot, func(path string, d fs.DirEntry, walkErr error) error {
+	// 2. Doc directories — `docs/`, `doc/`, `documentation/`. Real repos
+	// use one or the other (llm.c uses singular `doc/`); we walk all three.
+	for _, dirName := range []string{"docs", "doc", "documentation"} {
+		docsRoot := filepath.Join(repoAbs, dirName)
+		st, err := os.Stat(docsRoot)
+		if err != nil || !st.IsDir() {
+			continue
+		}
+		err = filepath.WalkDir(docsRoot, func(path string, d fs.DirEntry, walkErr error) error {
 			if walkErr != nil {
 				return walkErr
 			}
@@ -66,11 +71,37 @@ func ImportFromRepo(wikiRoot, repoPath string, repoName string) (ImportResult, e
 			}
 			rel, _ := filepath.Rel(docsRoot, path)
 			rel = filepath.ToSlash(strings.TrimSuffix(rel, ".md"))
-			slug := normalizeSlug("docs-" + strings.ReplaceAll(rel, "/", "-"))
-			origin := "docs/" + rel + ".md"
+			slug := normalizeSlug(dirName + "-" + strings.ReplaceAll(rel, "/", "-"))
+			origin := dirName + "/" + rel + ".md"
 			return writeImported(wikiRoot, path, slug, repoName, origin, &res)
 		})
 		if err != nil {
+			return res, err
+		}
+	}
+
+	// 3. Nested README.md files at <subdir>/README.md (one level deep). llm.c
+	// has scripts/README.md, many monorepos have similar layouts.
+	entries, err := os.ReadDir(repoAbs)
+	if err != nil {
+		return res, err
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if strings.HasPrefix(name, ".") || name == "docs" || name == "doc" ||
+			name == "documentation" || name == "node_modules" || name == "vendor" {
+			continue
+		}
+		nested := filepath.Join(repoAbs, name, "README.md")
+		if _, err := os.Stat(nested); err != nil {
+			continue
+		}
+		slug := normalizeSlug(name + "-readme")
+		origin := name + "/README.md"
+		if err := writeImported(wikiRoot, nested, slug, repoName, origin, &res); err != nil {
 			return res, err
 		}
 	}
@@ -111,25 +142,32 @@ func writeImported(wikiRoot, srcPath, slug, repoName, origin string, res *Import
 	return nil
 }
 
-// wrapImported strips any incoming frontmatter, ensures the body has a
-// level-1 title + summary line, and prepends keeba-compliant frontmatter
-// plus Sources/See Also stubs at the end.
+// wrapImported produces a keeba-lint-compliant page from an arbitrary
+// markdown source. It always emits frontmatter → title → summary → body in
+// that order, and appends Sources/See Also if the source didn't have them.
+//
+// To avoid duplicating the title, the body's own `# Title` line (if any) is
+// stripped before being re-emitted under the canonical title.
 func wrapImported(body, repoName, origin string) string {
 	body = stripIncomingFrontmatter(body)
 
-	title := firstTitle(body)
+	title, bodyAfterTitle := extractAndStripTitle(body)
 	if title == "" {
 		title = humanizeOrigin(origin)
 	}
-	summary := firstSummary(body)
+
+	summary, bodyAfterSummary := extractAndStripSummary(bodyAfterTitle)
 	if summary == "" {
-		summary = fmt.Sprintf("Imported from %s/%s — review and edit.", repoName, origin)
+		// Synthesize a summary from the first prose line if the source had no
+		// `> blockquote`. Falls through to a generic placeholder.
+		summary = synthesizeSummary(bodyAfterSummary)
+	}
+	if summary == "" {
+		summary = fmt.Sprintf("Imported from %s/%s — review and edit", repoName, origin)
 	}
 
-	hasTitle := regexp.MustCompile(`(?m)^# `).MatchString(body)
-	hasSummary := regexp.MustCompile(`(?m)^> `).MatchString(body)
-	hasSources := regexp.MustCompile(`(?m)^## Sources\b`).MatchString(body)
-	hasSeeAlso := regexp.MustCompile(`(?m)^## See Also\b`).MatchString(body)
+	hasSources := regexp.MustCompile(`(?m)^## Sources\b`).MatchString(bodyAfterSummary)
+	hasSeeAlso := regexp.MustCompile(`(?m)^## See Also\b`).MatchString(bodyAfterSummary)
 
 	var sb strings.Builder
 	sb.WriteString("---\n")
@@ -139,13 +177,9 @@ func wrapImported(body, repoName, origin string) string {
 	fmt.Fprintf(&sb, "cited_files: [\"%s/%s\"]\n", repoName, origin)
 	sb.WriteString("---\n\n")
 
-	if !hasTitle {
-		fmt.Fprintf(&sb, "# %s\n\n", title)
-	}
-	if !hasSummary {
-		fmt.Fprintf(&sb, "> %s\n\n", strings.TrimRight(summary, "."))
-	}
-	sb.WriteString(strings.TrimRight(body, "\n"))
+	fmt.Fprintf(&sb, "# %s\n\n", title)
+	fmt.Fprintf(&sb, "> %s\n\n", strings.TrimSpace(summary))
+	sb.WriteString(strings.TrimRight(bodyAfterSummary, "\n"))
 	sb.WriteString("\n")
 	if !hasSources {
 		fmt.Fprintf(&sb, "\n## Sources\n\n- `%s/%s`\n", repoName, origin)
@@ -154,6 +188,77 @@ func wrapImported(body, repoName, origin string) string {
 		sb.WriteString("\n## See Also\n\n- [[index]]\n")
 	}
 	return sb.String()
+}
+
+// extractAndStripTitle returns (title, body-without-that-title-line). If the
+// body has no `# Heading`, returns ("", body unchanged).
+func extractAndStripTitle(body string) (string, string) {
+	lines := strings.Split(body, "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "# ") && !strings.HasPrefix(line, "## ") {
+			title := strings.TrimSpace(strings.TrimPrefix(line, "# "))
+			// Drop the title line and any leading blank line right after it.
+			rest := append([]string{}, lines[:i]...)
+			j := i + 1
+			for j < len(lines) && strings.TrimSpace(lines[j]) == "" {
+				j++
+			}
+			rest = append(rest, lines[j:]...)
+			return title, strings.Join(rest, "\n")
+		}
+	}
+	return "", body
+}
+
+// extractAndStripSummary returns (summary, body-without-summary). Looks for
+// a `> ` line within the first 5 non-empty lines and removes it from the
+// body so we can re-emit it in canonical position.
+func extractAndStripSummary(body string) (string, string) {
+	lines := strings.Split(body, "\n")
+	seen := 0
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		seen++
+		if strings.HasPrefix(line, "> ") {
+			summary := strings.TrimSpace(strings.TrimPrefix(line, "> "))
+			rest := append([]string{}, lines[:i]...)
+			j := i + 1
+			for j < len(lines) && strings.TrimSpace(lines[j]) == "" {
+				j++
+			}
+			rest = append(rest, lines[j:]...)
+			return summary, strings.Join(rest, "\n")
+		}
+		if seen >= 5 {
+			break
+		}
+	}
+	return "", body
+}
+
+// synthesizeSummary picks a one-line summary from the first prose paragraph
+// of body. Returns "" when the body has no usable prose.
+func synthesizeSummary(body string) string {
+	for _, line := range strings.Split(body, "\n") {
+		s := strings.TrimSpace(line)
+		if s == "" {
+			continue
+		}
+		if strings.HasPrefix(s, "#") || strings.HasPrefix(s, "```") || strings.HasPrefix(s, "|") {
+			continue
+		}
+		// First sentence, capped at 200 chars.
+		if idx := strings.IndexAny(s, ".!?"); idx > 20 {
+			s = s[:idx+1]
+		}
+		if len(s) > 200 {
+			s = s[:197] + "…"
+		}
+		return s
+	}
+	return ""
 }
 
 func stripIncomingFrontmatter(body string) string {
@@ -165,41 +270,6 @@ func stripIncomingFrontmatter(body string) string {
 		return body
 	}
 	return strings.TrimLeft(body[4+idx+5:], "\n")
-}
-
-func firstTitle(body string) string {
-	for _, line := range strings.Split(body, "\n") {
-		if strings.HasPrefix(line, "# ") && !strings.HasPrefix(line, "## ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "# "))
-		}
-	}
-	return ""
-}
-
-func firstSummary(body string) string {
-	lines := strings.Split(body, "\n")
-	seen := 0
-	for i, line := range lines {
-		if i == 0 || strings.TrimSpace(line) == "" {
-			continue
-		}
-		seen++
-		if strings.HasPrefix(line, "> ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "> "))
-		}
-		// First non-title prose line — use it as the summary.
-		if !strings.HasPrefix(line, "#") {
-			s := strings.TrimSpace(line)
-			if len(s) > 200 {
-				s = s[:200] + "…"
-			}
-			return s
-		}
-		if seen >= 5 {
-			break
-		}
-	}
-	return ""
 }
 
 func humanizeOrigin(origin string) string {

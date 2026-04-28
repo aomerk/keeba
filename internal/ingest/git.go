@@ -68,9 +68,18 @@ type Action struct {
 }
 
 var (
-	reBreaking   = regexp.MustCompile(`(?m)\bBREAKING(?:\s+CHANGE)?:`)
+	// reBreakingFooter matches the Conventional Commits "footer" form:
+	// `BREAKING:` or `BREAKING CHANGE:` at the start of a line in the
+	// subject or body. Inline mentions inside prose don't trigger.
+	reBreakingFooter = regexp.MustCompile(`(?m)^BREAKING(?:\s+CHANGE)?[:!]`)
+	// reBreakingBang matches the Conventional Commits "bang" form:
+	// `feat!: ...` or `feat(api)!: ...` at the start of the subject.
+	reBreakingBang = regexp.MustCompile(`^[A-Za-z]+(?:\([^)]+\))?!:`)
+	// Incident/decision keywords: subject only (single line, signal-rich).
+	// Matching anywhere in the body produces false positives any time a
+	// commit message references these words in prose.
 	reIncident   = regexp.MustCompile(`(?i)\b(incident|outage|rca|post[- ]?mortem|hotfix)\b`)
-	reDecision   = regexp.MustCompile(`(?i)\b(architecture|decision|adr|trade[- ]?off)\b`)
+	reDecision   = regexp.MustCompile(`(?i)\b(architecture|adr|trade[- ]?off)\b`)
 	reDependency = regexp.MustCompile(`(?i)\bbump\s+\S+\s+from\s+(\S+)\s+to\s+(\S+)`)
 	reSlugSafe   = regexp.MustCompile(`[^a-z0-9-]+`)
 )
@@ -78,10 +87,18 @@ var (
 // Classify returns zero or more Actions for one commit. Multiple actions are
 // possible (a "BREAKING incident hotfix" commit logs once *and* spawns an
 // investigation page).
+//
+// Heuristics:
+//   - BREAKING: matched against subject + body but only at start of a line
+//     (Conventional Commits convention). Avoids prose false positives.
+//   - Incident / decision keywords: subject ONLY. Bodies dilute signal —
+//     a commit body that *describes* the heuristic is not itself signal.
+//   - Dependency bumps: subject only, major-version delta only.
 func Classify(c Commit) []Action {
 	var out []Action
-	body := c.Subject + "\n" + c.Body
-	if reBreaking.MatchString(body) {
+	subject := c.Subject
+	full := c.Subject + "\n" + c.Body
+	if reBreakingFooter.MatchString(full) || reBreakingBang.MatchString(subject) {
 		out = append(out, Action{
 			Class: ClassBreaking, Commit: c,
 			AppendPath: "log.md",
@@ -90,7 +107,7 @@ func Classify(c Commit) []Action {
 				c.Date.UTC().Format("2006-01-02"), trim(c.Subject, 60), c.SHA[:short(c.SHA, 7)], c.Subject),
 		})
 	}
-	if reIncident.MatchString(body) {
+	if reIncident.MatchString(subject) {
 		slug := slugify(c.Date.UTC().Format("2006-01-02") + "-" + firstWords(c.Subject, 5))
 		out = append(out, Action{
 			Class: ClassIncident, Commit: c,
@@ -98,7 +115,7 @@ func Classify(c Commit) []Action {
 			NewBody:    incidentTemplate(c),
 		})
 	}
-	if reDecision.MatchString(body) {
+	if reDecision.MatchString(subject) {
 		slug := slugify(firstWords(c.Subject, 6))
 		out = append(out, Action{
 			Class: ClassDecision, Commit: c,
