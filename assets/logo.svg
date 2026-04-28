@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="keeba">
+  <title>keeba</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"  stop-color="#fb923c"/>
+      <stop offset="55%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#9a1239"/>
+    </linearGradient>
+    <linearGradient id="emberStroke" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%"  stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#fb923c"/>
+    </linearGradient>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- card -->
+  <rect x="8" y="8" width="240" height="240" rx="48" ry="48" fill="url(#bg)"/>
+
+  <!-- subtle stack of pages, hint at "wiki" -->
+  <g fill="#ffffff" opacity="0.10">
+    <rect x="46" y="88"  width="118" height="14" rx="4"/>
+    <rect x="46" y="116" width="142" height="14" rx="4"/>
+    <rect x="46" y="144" width="100" height="14" rx="4"/>
+    <rect x="46" y="172" width="130" height="14" rx="4"/>
+  </g>
+
+  <!-- monogram "kb" -->
+  <g fill="#ffffff" filter="url(#soft)">
+    <!-- k -->
+    <path d="M70 64
+             L70 192
+             L92 192
+             L92 148
+             L130 192
+             L160 192
+             L116 138
+             L156 96
+             L130 96
+             L92 134
+             L92 64 Z"/>
+    <!-- b -->
+    <path d="M170 64
+             L170 192
+             L208 192
+             Q236 192 236 162
+             Q236 138 215 132
+             Q230 126 230 108
+             Q230 84 206 84
+             L192 84
+             L192 64 Z
+             M192 102
+             L204 102
+             Q214 102 214 112
+             Q214 122 204 122
+             L192 122 Z
+             M192 138
+             L208 138
+             Q220 138 220 152
+             Q220 168 206 168
+             L192 168 Z" fill-rule="evenodd"/>
+  </g>
+
+  <!-- ember accent (top-right) -->
+  <g>
+    <path d="M210 32
+             C 215 24, 226 24, 230 32
+             C 236 42, 230 50, 220 50
+             C 210 50, 204 42, 210 32 Z"
+          fill="#fde68a" stroke="url(#emberStroke)" stroke-width="2"/>
+    <circle cx="220" cy="40" r="3" fill="#fff7ed"/>
+  </g>
+</svg>

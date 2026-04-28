@@ -1,9 +1,31 @@
+<div align="center">
+
+<img src="assets/logo.svg" width="180" alt="keeba">
+
 # keeba
 
-> Your AI tools are reading **50–2000× more bytes** than they need to.
-> keeba fixes that.
+**Your AI tools are reading 50–2000× more bytes than they need to. keeba fixes that.**
 
 A one-command bridge between your codebase and the AI tools you already use. Schema-clean wiki, drift-checked citations, MCP server out of the box, ingest agents that actually run. Pure Go. MIT.
+
+[![CI](https://github.com/aomerk/keeba/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/aomerk/keeba/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/aomerk/keeba?include_prereleases&color=fb923c&label=release)](https://github.com/aomerk/keeba/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/aomerk/keeba.svg)](https://pkg.go.dev/github.com/aomerk/keeba)
+[![Go Report Card](https://goreportcard.com/badge/github.com/aomerk/keeba)](https://goreportcard.com/report/github.com/aomerk/keeba)
+[![Go version](https://img.shields.io/github/go-mod/go-version/aomerk/keeba?color=00ADD8)](https://github.com/aomerk/keeba/blob/main/go.mod)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/aomerk/keeba/pulls)
+
+[![GitHub stars](https://img.shields.io/github/stars/aomerk/keeba?style=social)](https://github.com/aomerk/keeba/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/aomerk/keeba?style=social)](https://github.com/aomerk/keeba/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/aomerk/keeba?color=orange)](https://github.com/aomerk/keeba/issues)
+[![Last commit](https://img.shields.io/github/last-commit/aomerk/keeba?color=ef4444)](https://github.com/aomerk/keeba/commits/main)
+[![Code size](https://img.shields.io/github/languages/code-size/aomerk/keeba)](https://github.com/aomerk/keeba)
+[![Downloads](https://img.shields.io/github/downloads/aomerk/keeba/total?color=9a1239)](https://github.com/aomerk/keeba/releases)
+
+</div>
+
+---
 
 ```text
 keeba: 2465.9× cheaper, 80.1× faster (5 questions; byte-count mode)
