@@ -1,0 +1,28 @@
+name: keeba-lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: install keeba
+        run: go install github.com/aomerk/keeba/cmd/keeba@latest
+
+      - name: lint
+        run: keeba lint --warnings-as-errors
+
+      - name: drift
+        run: keeba drift
+
+      - name: meta --check
+        run: keeba meta --check

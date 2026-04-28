@@ -14,10 +14,6 @@ func main() {
 	if err == nil {
 		return
 	}
-	if cli.IsStubError(err) {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
-	}
 	if cli.IsSilentExit(err) {
 		os.Exit(1)
 	}

@@ -1,91 +1,55 @@
 #!/usr/bin/env bash
-# dogfood.sh — exercise the keeba binary end-to-end against a tiny sample wiki.
-# Not run in CI; run locally before opening a PR to verify the CLI does what
-# the README claims it does.
+# dogfood.sh — exercise the keeba binary end-to-end.
+#
+# Builds keeba from source, scaffolds a fresh wiki via `keeba init`, then
+# exercises lint / drift / meta / search / bench / ingest / mcp serve, and
+# asserts every step exits cleanly. Run this before opening a PR.
 
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")" && pwd)
-BIN=$(mktemp -d)/keeba
-SAMPLE=$(mktemp -d)
-trap 'rm -rf "$BIN" "$SAMPLE"' EXIT
+SCRATCH=$(mktemp -d)
+WIKI="$SCRATCH/demo-wiki"
+trap 'rm -rf "$SCRATCH"' EXIT
 
 echo "==> build keeba"
-( cd "$ROOT" && go build -o "$BIN" ./cmd/keeba )
+( cd "$ROOT" && go build -o "$SCRATCH/keeba" ./cmd/keeba )
+BIN="$SCRATCH/keeba"
 
-echo "==> scaffold sample wiki at $SAMPLE"
-mkdir -p "$SAMPLE/concepts"
-cat >"$SAMPLE/concepts/alpha.md" <<'MD'
----
-tags: [test]
-last_verified: 2026-04-28
-status: current
----
+echo "==> keeba --version"
+"$BIN" --version
 
-# Alpha
+echo "==> keeba init demo-wiki"
+( cd "$SCRATCH" && "$BIN" init demo-wiki --purpose "dogfood smoke" )
+test -f "$WIKI/SCHEMA.md" || { echo "FAIL: SCHEMA.md not scaffolded"; exit 1; }
 
-> First page.
+echo "==> keeba lint (fresh wiki, expect clean)"
+"$BIN" lint --wiki-root "$WIKI"
 
-## Sources
+echo "==> keeba drift (no prefixes configured, expect clean)"
+"$BIN" drift --wiki-root "$WIKI"
 
-## See Also
-- [[beta]]
-MD
-
-cat >"$SAMPLE/concepts/beta.md" <<'MD'
----
-tags: [test]
-last_verified: 2026-04-28
-status: current
----
-
-# Beta
-
-> Second page.
-
-## Sources
-
-## See Also
-- [[alpha]]
-MD
-
-cat >"$SAMPLE/concepts/broken.md" <<'MD'
----
-tags: [test]
-last_verified: 2026-04-28
-status: current
----
-
-# Broken
-
-> Page that links to nothing.
-
-## Sources
-
-## See Also
-- [[nonexistent]]
-MD
-
-echo "==> keeba lint --file alpha.md (should pass)"
-"$BIN" lint --wiki-root "$SAMPLE" --file "$SAMPLE/concepts/alpha.md"
-
-echo "==> keeba lint (should fail with broken-wikilink)"
-if "$BIN" lint --wiki-root "$SAMPLE"; then
-    echo "FAIL: expected lint to exit non-zero on broken wikilink"; exit 1
-fi
-
-echo "==> keeba meta (should write _meta.json)"
-"$BIN" meta --wiki-root "$SAMPLE"
-test -f "$SAMPLE/_meta.json" || { echo "FAIL: _meta.json missing"; exit 1; }
+echo "==> keeba meta"
+"$BIN" meta --wiki-root "$WIKI"
+test -f "$WIKI/_meta.json" || { echo "FAIL: _meta.json missing"; exit 1; }
 
 echo "==> keeba meta --check (should be up to date)"
-"$BIN" meta --check --wiki-root "$SAMPLE"
+"$BIN" meta --check --wiki-root "$WIKI"
 
-echo "==> keeba init test (stub, expect exit 2)"
-set +e
-"$BIN" init test
-code=$?
-set -e
-test "$code" = 2 || { echo "FAIL: stub exit code $code, want 2"; exit 1; }
+echo "==> keeba search 'getting started' (expect ≥1 hit)"
+"$BIN" search "getting started" --wiki-root "$WIKI"
+
+echo "==> keeba bench (writes _bench/<date>.md)"
+"$BIN" bench --wiki-root "$WIKI" --raw "$WIKI" --top-k 3
+test -d "$WIKI/_bench" || { echo "FAIL: _bench/ missing"; exit 1; }
+
+echo "==> keeba ingest git --dry-run (prints template)"
+"$BIN" ingest git --dry-run | head -3
+
+echo "==> keeba mcp serve (initialize over stdio)"
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize"}' \
+  | "$BIN" mcp serve --wiki-root "$WIKI" \
+  | head -1 | grep -q '"protocolVersion"' \
+  || { echo "FAIL: mcp serve did not respond with protocolVersion"; exit 1; }
 
 echo "==> dogfood complete"

@@ -1,0 +1,19 @@
+schema_version: 1
+name: "{{.Name}}"
+purpose: "{{.Purpose}}"
+
+lint:
+  required_frontmatter_fields: [tags, last_verified, status]
+  valid_status_values: [current, draft, archived, deprecated, proposed]
+  allowed_uppercase_filenames: [SCHEMA.md, README.md, QUERY_PATTERNS.md]
+
+drift:
+  # Add the directories you cite from in this wiki. Citations like
+  # `your-app/cmd/foo.go:113` are verified against ../your-app/cmd/foo.go.
+  repo_prefixes: []
+  skip_path_prefixes: ["wiki/", ".keeba/", "_bench/"]
+  gigarepo_root: ".."
+
+# Search defaults are pure-text BM25 in v0.1; vector search lands in v0.2.
+search:
+  algorithm: bm25

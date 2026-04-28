@@ -1,0 +1,36 @@
+name: keeba-meta-rebuild
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: install keeba
+        run: go install github.com/aomerk/keeba/cmd/keeba@latest
+
+      - name: rebuild
+        run: keeba meta
+
+      - name: commit if changed
+        run: |
+          if [ -n "$(git status --porcelain _meta.json _xref/)" ]; then
+            git config user.name "keeba-bot"
+            git config user.email "keeba-bot@users.noreply.github.com"
+            git add _meta.json _xref/
+            git commit -m "[keeba-bot] rebuild _meta.json + _xref/"
+            git push
+          fi

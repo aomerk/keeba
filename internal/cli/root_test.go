@@ -38,27 +38,11 @@ func TestHelpListsAllSubcommands(t *testing.T) {
 	}
 }
 
-func TestStubsReturnError(t *testing.T) {
-	for _, args := range [][]string{
-		{"init", "x"},
-		{"search", "x"},
-		{"ingest", "git"},
-		{"bench"},
-		{"mcp", "serve"},
-	} {
-		t.Run(strings.Join(args, " "), func(t *testing.T) {
-			root := NewRoot()
-			out := &bytes.Buffer{}
-			root.SetOut(out)
-			root.SetErr(out)
-			root.SetArgs(args)
-			err := root.Execute()
-			if err == nil {
-				t.Fatal("expected error from stub")
-			}
-			if !IsStubError(err) {
-				t.Fatalf("expected stub error, got %T %v", err, err)
-			}
-		})
+func TestSilentExitSentinel(t *testing.T) {
+	if !IsSilentExit(errSilentFail) {
+		t.Fatal("errSilentFail should satisfy IsSilentExit")
+	}
+	if IsSilentExit(nil) {
+		t.Fatal("nil should not be a silent exit")
 	}
 }

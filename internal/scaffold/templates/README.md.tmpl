@@ -1,0 +1,33 @@
+# {{.Name}}
+
+> {{.Purpose}}
+
+This is a [keeba](https://github.com/aomerk/keeba)-managed wiki.
+
+## How to use it
+
+```bash
+keeba lint              # check the wiki against SCHEMA.md
+keeba drift             # verify code citations are still in bounds
+keeba meta              # rebuild the agent-facing _meta.json + _xref/
+keeba search "query"    # BM25 search over the wiki
+keeba mcp serve         # stdio MCP server (for Claude Code, Cursor, Codex)
+```
+
+## Layout
+
+- [`index.md`](index.md) — entry point for both humans and agents.
+- [`SCHEMA.md`](SCHEMA.md) — what every page must contain.
+- [`log.md`](log.md) — append-only activity log.
+- `entities/`, `concepts/`, `investigations/`, `decisions/` — the actual pages.
+- `agents/` — Markdown prompt templates for ingest agents.
+- `_meta.json`, `_xref/` — generated; `keeba meta` rebuilds them.
+
+## Editing
+
+Pages must follow [`SCHEMA.md`](SCHEMA.md). Run `keeba lint --staged` before
+committing to catch violations locally. CI runs the same lint on every PR.
+
+## License
+
+Configure as you wish.
