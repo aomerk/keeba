@@ -141,15 +141,21 @@ func (p *Pipeline) Fit(corpus []string) error {
 	return nil
 }
 
-// BuildPipeline parses a comma-separated encoder spec
-// (e.g. "glossary,structural-card") and constructs the corresponding
-// Pipeline. Empty / "raw" yields an empty (no-op) pipeline. Unknown
-// encoder names return an error.
+// BuildPipeline parses an encoder spec — comma-separated
+// (`"glossary,structural-card"`, the canonical CLI form) or plus-joined
+// (`"glossary-dedupe+md-caveman"`, the form Pipeline.Name() produces) —
+// and constructs the corresponding Pipeline. Both separators are
+// accepted so a spec written by `keeba bench --write-config` round-trips
+// cleanly when re-read by `keeba ingest` / `keeba sync`. Empty or "raw"
+// yields an empty (no-op) pipeline. Unknown encoder names error.
 func BuildPipeline(spec string) (*Pipeline, error) {
 	spec = strings.TrimSpace(spec)
 	if spec == "" || spec == "raw" {
 		return NewPipeline(), nil
 	}
+	// Normalize "+" (Pipeline.Name output) to "," (canonical input form)
+	// so the two are interchangeable end-to-end.
+	spec = strings.ReplaceAll(spec, "+", ",")
 	parts := strings.Split(spec, ",")
 	encs := make([]Encoder, 0, len(parts))
 	for _, part := range parts {
