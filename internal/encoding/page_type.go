@@ -1,4 +1,4 @@
-package bench
+package encoding
 
 import (
 	"path/filepath"

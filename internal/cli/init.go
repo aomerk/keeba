@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/aomerk/keeba/internal/config"
 	"github.com/aomerk/keeba/internal/scaffold"
 )
 
@@ -43,7 +44,11 @@ func newInitCmd() *cobra.Command {
 				// Pass empty repoName so the importer derives it from the
 				// source path; that keeps citations meaningful (e.g.
 				// "llm.c/README.md" rather than "my-wiki/README.md").
-				res, err := scaffold.ImportFromRepo(outDir, fromRepo, "")
+				//
+				// Encoding pipelines configured in the just-scaffolded
+				// keeba.config.yaml apply per-page-type at write time.
+				cfg, _ := config.Load(outDir)
+				res, err := scaffold.ImportFromRepoWithEncoding(outDir, fromRepo, "", cfg.Encoding)
 				if err != nil {
 					return fmt.Errorf("import: %w", err)
 				}
