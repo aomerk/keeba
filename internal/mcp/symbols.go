@@ -91,6 +91,78 @@ func (s *Server) toolFindDef(raw json.RawMessage) rpcResponse {
 	return symbolListResponse(matches)
 }
 
+// findCallersArgs is the argument shape for the find_callers tool.
+type findCallersArgs struct {
+	Name  string `json:"name"`
+	File  string `json:"file,omitempty"`
+	Limit int    `json:"limit,omitempty"`
+}
+
+// toolFindCallers returns every call edge whose callee matches name.
+// Pairs with find_def: find_def says "X is here", find_callers says
+// "and here are the N places X is called from". The agent now answers
+// impact questions ("what would break if I rename X?") in two MCP
+// calls, no grep loop.
+func (s *Server) toolFindCallers(raw json.RawMessage) rpcResponse {
+	if s.live == nil {
+		return notCompiledResponse()
+	}
+	var a findCallersArgs
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return rpcResponse{Error: &rpcError{Code: -32602, Message: "bad arguments: " + err.Error()}}
+	}
+	if strings.TrimSpace(a.Name) == "" {
+		return rpcResponse{Error: &rpcError{Code: -32602, Message: "name is required"}}
+	}
+	limit := a.Limit
+	if limit <= 0 {
+		limit = 25
+	}
+	if limit > 200 {
+		limit = 200
+	}
+
+	edges := s.live.CallersOf(a.Name)
+
+	// Optional file/dir filter so the agent can ask "who calls X under
+	// internal/auth/" without pulling the global call graph.
+	if filePrefix := strings.TrimSpace(a.File); filePrefix != "" {
+		filtered := edges[:0]
+		for _, e := range edges {
+			if strings.HasPrefix(e.CallerFile, filePrefix) {
+				filtered = append(filtered, e)
+			}
+		}
+		edges = filtered
+	}
+
+	// Stable order: file, then line, so consecutive runs diff cleanly.
+	sort.Slice(edges, func(i, j int) bool {
+		if edges[i].CallerFile != edges[j].CallerFile {
+			return edges[i].CallerFile < edges[j].CallerFile
+		}
+		return edges[i].CallerLine < edges[j].CallerLine
+	})
+	if len(edges) > limit {
+		edges = edges[:limit]
+	}
+
+	body, err := json.MarshalIndent(map[string]any{
+		"callee": a.Name,
+		"count":  len(edges),
+		"edges":  edges,
+	}, "", "  ")
+	if err != nil {
+		return rpcResponse{Error: &rpcError{Code: -32603, Message: "encode: " + err.Error()}}
+	}
+	return rpcResponse{Result: map[string]any{
+		"content": []map[string]string{{
+			"type": "text",
+			"text": string(body),
+		}},
+	}}
+}
+
 // summaryArgs is the argument shape for the summary tool.
 type summaryArgs struct {
 	File  string `json:"file,omitempty"`

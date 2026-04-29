@@ -25,9 +25,10 @@ import (
 type LiveIndex struct {
 	repoRoot string
 
-	mu     sync.RWMutex
-	idx    *Index
-	byName map[string][]Symbol
+	mu              sync.RWMutex
+	idx             *Index
+	byName          map[string][]Symbol
+	callersByCallee map[string][]CallEdge // inverse index for find_callers
 
 	watcher  *fsnotify.Watcher
 	flushDur time.Duration
@@ -54,11 +55,12 @@ func NewLiveIndex(repoRoot string) (*LiveIndex, error) {
 	}
 
 	li := &LiveIndex{
-		repoRoot: repoRoot,
-		idx:      &idx,
-		byName:   buildByName(idx.Symbols),
-		watcher:  fw,
-		flushDur: 30 * time.Second,
+		repoRoot:        repoRoot,
+		idx:             &idx,
+		byName:          buildByName(idx.Symbols),
+		callersByCallee: buildCallersByCallee(idx.Edges),
+		watcher:         fw,
+		flushDur:        30 * time.Second,
 	}
 	if err := li.addWatchesFromIndex(); err != nil {
 		_ = fw.Close()
@@ -73,6 +75,17 @@ func buildByName(syms []Symbol) map[string][]Symbol {
 	out := make(map[string][]Symbol, len(syms))
 	for _, s := range syms {
 		out[s.Name] = append(out[s.Name], s)
+	}
+	return out
+}
+
+// buildCallersByCallee inverts the call graph for find_callers.
+// Key is the bare callee name; values are the edges where caller
+// references that name.
+func buildCallersByCallee(edges []CallEdge) map[string][]CallEdge {
+	out := make(map[string][]CallEdge, len(edges))
+	for _, e := range edges {
+		out[e.Callee] = append(out[e.Callee], e)
 	}
 	return out
 }
@@ -127,8 +140,8 @@ func (li *LiveIndex) Run(ctx context.Context) error {
 	}
 }
 
-// handleEvent re-extracts the touched file (or removes its symbols on
-// Remove/Rename) and updates the in-memory snapshot.
+// handleEvent re-extracts the touched file (or removes its symbols and
+// outgoing edges on Remove/Rename) and updates the in-memory snapshot.
 func (li *LiveIndex) handleEvent(ev fsnotify.Event) {
 	if ev.Name == "" {
 		return
@@ -141,7 +154,7 @@ func (li *LiveIndex) handleEvent(ev fsnotify.Event) {
 
 	switch {
 	case ev.Op&(fsnotify.Remove|fsnotify.Rename) != 0:
-		li.replaceFileSymbols(rel, nil)
+		li.replaceFile(rel, nil, nil)
 
 	case ev.Op&(fsnotify.Write|fsnotify.Create) != 0:
 		// Skip non-regular files (dirs, sockets, etc.).
@@ -157,34 +170,51 @@ func (li *LiveIndex) handleEvent(ev fsnotify.Event) {
 		if err != nil {
 			return
 		}
-		li.replaceFileSymbols(rel, syms)
+		edges := ExtractCalls(rel, src)
+		li.replaceFile(rel, syms, edges)
 	}
 }
 
-// replaceFileSymbols swaps every symbol whose File==rel for the new
-// slice (which may be empty for deletes). Rebuilds the byName map.
-// Single big lock — keeps the read path lock-free except for one
-// RWMutex.RLock per query, which is cheap.
-func (li *LiveIndex) replaceFileSymbols(rel string, fresh []Symbol) {
+// replaceFile swaps every symbol AND every outgoing call edge whose
+// origin is rel for the new slices (which may be empty for deletes).
+// Rebuilds byName + callersByCallee. Single big Lock — keeps the read
+// path lock-free except for one RLock per query.
+func (li *LiveIndex) replaceFile(rel string, freshSyms []Symbol, freshEdges []CallEdge) {
 	li.mu.Lock()
 	defer li.mu.Unlock()
 
-	out := li.idx.Symbols[:0:0]
+	// Symbols
+	syms := li.idx.Symbols[:0:0]
 	for _, s := range li.idx.Symbols {
 		if s.File != rel {
-			out = append(out, s)
+			syms = append(syms, s)
 		}
 	}
-	out = append(out, fresh...)
-	li.idx.Symbols = out
+	syms = append(syms, freshSyms...)
+	li.idx.Symbols = syms
 
+	// Edges (drop everything whose CallerFile == rel; add fresh)
+	edges := li.idx.Edges[:0:0]
+	for _, e := range li.idx.Edges {
+		if e.CallerFile != rel {
+			edges = append(edges, e)
+		}
+	}
+	edges = append(edges, freshEdges...)
+	li.idx.Edges = edges
+
+	// Counters
 	files := map[string]struct{}{}
-	for _, s := range out {
+	for _, s := range syms {
 		files[s.File] = struct{}{}
 	}
 	li.idx.NumFiles = len(files)
-	li.idx.NumSymbols = len(out)
-	li.byName = buildByName(out)
+	li.idx.NumSymbols = len(syms)
+	li.idx.NumEdges = len(edges)
+
+	// Indexes
+	li.byName = buildByName(syms)
+	li.callersByCallee = buildCallersByCallee(edges)
 	li.dirty = true
 }
 
@@ -239,6 +269,20 @@ func (li *LiveIndex) Names(fn func(name string, syms []Symbol)) {
 	for n, syms := range li.byName {
 		fn(n, syms)
 	}
+}
+
+// CallersOf returns the call edges where Callee==name. Used by the
+// find_callers MCP tool. The returned slice is a copy — safe to mutate.
+func (li *LiveIndex) CallersOf(name string) []CallEdge {
+	li.mu.RLock()
+	defer li.mu.RUnlock()
+	src := li.callersByCallee[name]
+	if len(src) == 0 {
+		return nil
+	}
+	out := make([]CallEdge, len(src))
+	copy(out, src)
+	return out
 }
 
 // Symbols returns a copy of every symbol. Cost: O(N), used by the

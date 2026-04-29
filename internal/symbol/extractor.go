@@ -104,6 +104,56 @@ func extractFile(path string, src []byte) ([]Symbol, error) {
 	return ex.Extract(path, src)
 }
 
+// ExtractCallsRepo is ExtractRepo but for call edges — walks the repo
+// and dispatches each file to its language's call-edge extractor.
+// Sharing the walk would be nicer (single pass), but two passes lets
+// us swap in a smarter call resolver later without restructuring.
+func ExtractCallsRepo(repoRoot string) ([]CallEdge, error) {
+	const maxFileBytes = 1 << 20
+
+	skip := map[string]struct{}{
+		".git": {}, ".hg": {}, ".svn": {},
+		"node_modules": {}, "vendor": {}, ".venv": {}, "venv": {}, "env": {},
+		"__pycache__": {}, ".tox": {}, ".pytest_cache": {}, ".mypy_cache": {},
+		".ruff_cache": {}, "dist": {}, "build": {}, ".next": {}, ".nuxt": {},
+		"target": {}, ".idea": {}, ".vscode": {}, ".keeba": {}, ".cache": {},
+	}
+
+	var out []CallEdge
+	err := filepath.WalkDir(repoRoot, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() {
+			name := d.Name()
+			if _, drop := skip[name]; drop {
+				return filepath.SkipDir
+			}
+			if strings.HasPrefix(name, ".") && path != repoRoot {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if info, err := d.Info(); err == nil && info.Size() > maxFileBytes {
+			return nil
+		}
+		rel, err := filepath.Rel(repoRoot, path)
+		if err != nil {
+			return err
+		}
+		rel = filepath.ToSlash(rel)
+		src, err := os.ReadFile(path) //nolint:gosec
+		if err != nil {
+			return nil
+		}
+		if edges := ExtractCalls(rel, src); len(edges) > 0 {
+			out = append(out, edges...)
+		}
+		return nil
+	})
+	return out, err
+}
+
 // ExtractRepo walks repoRoot and returns every symbol in every supported
 // file. Hidden directories (.git, .venv) and big-binary directories
 // (node_modules, vendor, target, dist, build) are skipped. Files larger
