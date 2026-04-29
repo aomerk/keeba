@@ -229,6 +229,33 @@ func (s *Server) listTools() []map[string]any {
 				},
 			},
 		},
+		{
+			"name":        "read_chunk",
+			"description": "Read an exact line range from a file. Pair with find_def: find_def gives you the symbol's file + line range; read_chunk pulls just that body. Typically 30-200 lines instead of an 800-line read_file of the whole file. Path is repo-relative; absolute paths and traversal outside the repo root are rejected.",
+			"inputSchema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"file": map[string]any{
+						"type":        "string",
+						"description": "Repo-relative path.",
+					},
+					"start_line": map[string]any{
+						"type":        "integer",
+						"description": "1-based start line (inclusive).",
+					},
+					"end_line": map[string]any{
+						"type":        "integer",
+						"description": "1-based end line (inclusive). Capped at file length.",
+					},
+					"max_lines": map[string]any{
+						"type":        "integer",
+						"description": "Hard cap on returned lines (default 200, max 1000).",
+						"default":     200,
+					},
+				},
+				"required": []string{"file", "start_line", "end_line"},
+			},
+		},
 	}
 	return tools
 }
@@ -245,6 +272,8 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 		return s.toolFindDef(env.Arguments)
 	case "summary":
 		return s.toolSummary(env.Arguments)
+	case "read_chunk":
+		return s.toolReadChunk(env.Arguments)
 	}
 	return rpcResponse{Error: &rpcError{Code: -32602, Message: "unknown tool: " + env.Name}}
 }
