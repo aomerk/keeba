@@ -10,25 +10,19 @@ import (
 	"github.com/aomerk/keeba/internal/symbol"
 )
 
-// loadSymbols tries to read the per-repo symbol index. Missing index is
-// not fatal — it just means the symbol-graph tools (find_def, summary)
-// return "no graph available" until the user runs `keeba compile`.
-func loadSymbols(repoRoot string) (*symbol.Index, map[string][]symbol.Symbol, error) {
-	idx, err := symbol.Load(repoRoot)
+// loadLiveSymbols tries to read the per-repo symbol index and wrap it
+// in a fsnotify-watched LiveIndex. Missing index is not fatal — the
+// symbol-graph tools (find_def, summary) just hint that the user
+// should run `keeba compile`.
+func loadLiveSymbols(repoRoot string) (*symbol.LiveIndex, error) {
+	li, err := symbol.NewLiveIndex(repoRoot)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, nil, nil
+			return nil, nil
 		}
-		// File exists but doesn't parse — surface to caller; corrupt index
-		// is a real problem.
-		return nil, nil, err
+		return nil, err
 	}
-
-	byName := make(map[string][]symbol.Symbol, len(idx.Symbols))
-	for _, s := range idx.Symbols {
-		byName[s.Name] = append(byName[s.Name], s)
-	}
-	return &idx, byName, nil
+	return li, nil
 }
 
 // findDefArgs is the argument shape for the find_def tool.
@@ -40,7 +34,7 @@ type findDefArgs struct {
 }
 
 func (s *Server) toolFindDef(raw json.RawMessage) rpcResponse {
-	if s.symsByName == nil {
+	if s.live == nil {
 		return notCompiledResponse()
 	}
 	var a findDefArgs
@@ -59,16 +53,14 @@ func (s *Server) toolFindDef(raw json.RawMessage) rpcResponse {
 	}
 
 	// Exact-match first; if nothing, try case-insensitive contains.
-	matches := append([]symbol.Symbol(nil), s.symsByName[a.Name]...)
+	matches := s.live.ByName(a.Name)
 	if len(matches) == 0 {
 		needle := strings.ToLower(a.Name)
-		for _, list := range s.symsByName {
-			for _, sym := range list {
-				if strings.Contains(strings.ToLower(sym.Name), needle) {
-					matches = append(matches, sym)
-				}
+		s.live.Names(func(name string, syms []symbol.Symbol) {
+			if strings.Contains(strings.ToLower(name), needle) {
+				matches = append(matches, syms...)
 			}
-		}
+		})
 	}
 
 	// Filter by language / kind if provided.
@@ -106,7 +98,7 @@ type summaryArgs struct {
 }
 
 func (s *Server) toolSummary(raw json.RawMessage) rpcResponse {
-	if s.syms == nil {
+	if s.live == nil {
 		return notCompiledResponse()
 	}
 	var a summaryArgs
@@ -122,8 +114,9 @@ func (s *Server) toolSummary(raw json.RawMessage) rpcResponse {
 	}
 
 	wantPrefix := strings.TrimSpace(a.File)
+	all := s.live.Symbols()
 	out := make([]symbol.Symbol, 0, limit)
-	for _, sym := range s.syms.Symbols {
+	for _, sym := range all {
 		if wantPrefix != "" && !strings.HasPrefix(sym.File, wantPrefix) {
 			continue
 		}

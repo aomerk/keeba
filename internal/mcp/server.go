@@ -43,27 +43,32 @@ type rpcResponse struct {
 }
 
 // Server is a stdio MCP server backed by a BM25 wiki index plus, when
-// available, a precompiled symbol graph (`.keeba/symbols.json` from
-// `keeba compile`). The symbol graph powers the find_def / summary
-// tools that let an agent skip its grep loop. SessionStats accumulates
-// per-tool savings so callers can render the "you saved $X this session"
-// receipt — the user-visible reason to install keeba.
+// available, a self-maintaining symbol graph (`.keeba/symbols.json`
+// from `keeba compile`, kept fresh by an fsnotify watcher inside
+// symbol.LiveIndex). Edits — Claude Code writes, IDE saves, `git pull`
+// — re-extract the touched file in <50ms with no manual `keeba compile`
+// re-run. SessionStats accumulates per-tool savings for the receipt.
 type Server struct {
-	cfg        config.KeebaConfig
-	idx        *search.Index
-	syms       *symbol.Index
-	symsByName map[string][]symbol.Symbol
-	stats      *SessionStats
-	Version    string // surfaced as serverInfo.version on initialize
+	cfg     config.KeebaConfig
+	idx     *search.Index
+	live    *symbol.LiveIndex // nil when no symbol graph is compiled yet
+	stats   *SessionStats
+	Version string // surfaced as serverInfo.version on initialize
 }
 
 // Stats exposes the live session counters. Useful when callers want to
 // log the receipt at server shutdown.
 func (s *Server) Stats() *SessionStats { return s.stats }
 
+// LiveIndex returns the self-maintaining symbol graph, or nil if no
+// graph is compiled yet. Callers (e.g. `keeba mcp serve`) should call
+// this to start the watcher's Run loop in a goroutine.
+func (s *Server) LiveIndex() *symbol.LiveIndex { return s.live }
+
 // New builds the BM25 index up-front so /tools/call queries are fast,
-// and tries to load a precompiled symbol graph from the wiki/repo root.
-// The default Version is "dev"; CLI callers should set it from cli.Version.
+// and tries to load a self-maintaining symbol graph from the wiki/repo
+// root. The default Version is "dev"; CLI callers should set it from
+// cli.Version.
 func New(cfg config.KeebaConfig) (*Server, error) {
 	idx, err := search.Build(cfg)
 	if err != nil {
@@ -73,13 +78,13 @@ func New(cfg config.KeebaConfig) (*Server, error) {
 
 	// Optional: load symbol graph from .keeba/symbols.json. Missing graph
 	// is fine — the symbol-aware tools just respond with a hint to run
-	// `keeba compile`. Corrupt graph is a real problem and we surface it.
-	syms, byName, err := loadSymbols(cfg.WikiRoot)
+	// `keeba compile`. Corrupt graph or fsnotify init failure is real
+	// and we surface it.
+	live, err := loadLiveSymbols(cfg.WikiRoot)
 	if err != nil {
 		return nil, fmt.Errorf("load symbol graph: %w", err)
 	}
-	srv.syms = syms
-	srv.symsByName = byName
+	srv.live = live
 	return srv, nil
 }
 
