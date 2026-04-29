@@ -23,6 +23,7 @@ func newBenchCmd() *cobra.Command {
 		llmProvider   string
 		maxRawChars   int
 		encodingSpec  string
+		encodingGrid  bool
 	)
 	cmd := &cobra.Command{
 		Use:   "bench",
@@ -68,6 +69,15 @@ ANTHROPIC_API_KEY to be set.`,
 				md += "\n" + bench.MarkdownEncoding(encRep)
 			}
 
+			var gridRep bench.GridReport
+			if encodingGrid {
+				gridRep, err = bench.RunEncodingGrid(cfg)
+				if err != nil {
+					return fmt.Errorf("bench --encoding-grid: %w", err)
+				}
+				md += "\n" + bench.MarkdownEncodingGrid(gridRep)
+			}
+
 			if out == "" {
 				out = filepath.Join(cfg.WikiRoot, "_bench",
 					rep.When.Format("2006-01-02-1504")+".md")
@@ -84,6 +94,16 @@ ANTHROPIC_API_KEY to be set.`,
 					"keeba: encoding %s — %.2f× compression on %d pages (%d → %d chars)\n",
 					encRep.Pipeline, encRep.Ratio(), len(encRep.Pages), encRep.TotalRaw, encRep.TotalEnc)
 			}
+			if encodingGrid {
+				if gridRep.Recommended != "" {
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+						"keeba: encoding-grid winner — %s (%.2f× compression)\n",
+						gridRep.Recommended, gridRep.BestRatio)
+				} else {
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(),
+						"keeba: encoding-grid — no pipeline cleared the 4.5× quality cap")
+				}
+			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", rel)
 			return nil
 		},
@@ -97,6 +117,8 @@ ANTHROPIC_API_KEY to be set.`,
 	cmd.Flags().StringVar(&encodingSpec, "encoding", "",
 		"encoding pipeline to also benchmark on the wiki (e.g. \"glossary,structural-card\"). "+
 			"Reports per-page compression after the standard wiki-vs-raw run.")
+	cmd.Flags().BoolVar(&encodingGrid, "encoding-grid", false,
+		"run every candidate encoding pipeline and report the winner (respects the 4× quality cliff per plan §10).")
 	return cmd
 }
 
