@@ -89,7 +89,7 @@ func extractSignature(body string) string {
 	return strings.TrimSpace(body)
 }
 
-func extractDocLine(body string, max int) string {
+func extractDocLine(body string, maxChars int) string {
 	m := cardDocstringRE.FindStringSubmatch(body)
 	if len(m) < 3 {
 		return ""
@@ -101,11 +101,11 @@ func extractDocLine(body string, max int) string {
 	if i := strings.IndexByte(candidate, '\n'); i >= 0 {
 		candidate = candidate[:i]
 	}
-	if utf8.RuneCountInString(candidate) > max {
+	if utf8.RuneCountInString(candidate) > maxChars {
 		// safe truncation on rune boundary
 		runes := []rune(candidate)
-		if len(runes) > max {
-			candidate = string(runes[:max])
+		if len(runes) > maxChars {
+			candidate = string(runes[:maxChars])
 		}
 	}
 	return candidate

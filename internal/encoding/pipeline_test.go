@@ -28,8 +28,8 @@ func (f *fakeFitterEnc) Encode(body string) (string, error) {
 
 type errEnc struct{}
 
-func (errEnc) Name() string                       { return "boom" }
-func (errEnc) Encode(string) (string, error)      { return "", errors.New("kaboom") }
+func (errEnc) Name() string                  { return "boom" }
+func (errEnc) Encode(string) (string, error) { return "", errors.New("kaboom") }
 
 func TestPipelineEmptyName(t *testing.T) {
 	if got := NewPipeline().Name(); got != "raw" {
