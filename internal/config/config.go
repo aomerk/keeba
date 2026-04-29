@@ -32,6 +32,36 @@ type IngestConfig struct {
 	GitHub IngestGitHubConfig `yaml:"github"`
 }
 
+// EncodingConfig holds per-page-type encoding pipeline specs. `keeba bench
+// --encoding-grid-by-type --write-config` populates these; `keeba ingest`
+// and `keeba sync` consume them at write time. Empty means "no encoding
+// for that page type" — the page is written as raw markdown.
+//
+// Page types map 1-to-1 with bench.PageType:
+//
+//	function  — function/class definition pages (cited code files)
+//	entity    — fact-heavy entity pages (bullet-list of properties)
+//	narrative — flowing prose (default for anything else)
+type EncodingConfig struct {
+	Function  string `yaml:"function,omitempty"`
+	Entity    string `yaml:"entity,omitempty"`
+	Narrative string `yaml:"narrative,omitempty"`
+}
+
+// PipelineForType returns the configured pipeline spec for the named
+// page-type ("function", "entity", "narrative"), or "" if none configured.
+func (e EncodingConfig) PipelineForType(pageType string) string {
+	switch pageType {
+	case "function":
+		return e.Function
+	case "entity":
+		return e.Entity
+	case "narrative":
+		return e.Narrative
+	}
+	return ""
+}
+
 // IngestGitHubConfig holds GitHub-specific ingest defaults.
 type IngestGitHubConfig struct {
 	// Repo is "owner/name". When set, `keeba ingest github` uses it without
@@ -41,12 +71,13 @@ type IngestGitHubConfig struct {
 
 // KeebaConfig is the resolved configuration plus the wiki root path.
 type KeebaConfig struct {
-	SchemaVersion int          `yaml:"schema_version"`
-	Name          string       `yaml:"name"`
-	Purpose       string       `yaml:"purpose"`
-	Lint          LintConfig   `yaml:"lint"`
-	Drift         DriftConfig  `yaml:"drift"`
-	Ingest        IngestConfig `yaml:"ingest"`
+	SchemaVersion int            `yaml:"schema_version"`
+	Name          string         `yaml:"name"`
+	Purpose       string         `yaml:"purpose"`
+	Lint          LintConfig     `yaml:"lint"`
+	Drift         DriftConfig    `yaml:"drift"`
+	Ingest        IngestConfig   `yaml:"ingest"`
+	Encoding      EncodingConfig `yaml:"encoding,omitempty"`
 
 	// WikiRoot is the directory that owns this config (or the directory the
 	// caller asked us to treat as the wiki root). Always absolute.
@@ -189,6 +220,41 @@ func merge(dst *KeebaConfig, src KeebaConfig) {
 	if src.Ingest.GitHub.Repo != "" {
 		dst.Ingest.GitHub.Repo = src.Ingest.GitHub.Repo
 	}
+	if src.Encoding.Function != "" {
+		dst.Encoding.Function = src.Encoding.Function
+	}
+	if src.Encoding.Entity != "" {
+		dst.Encoding.Entity = src.Encoding.Entity
+	}
+	if src.Encoding.Narrative != "" {
+		dst.Encoding.Narrative = src.Encoding.Narrative
+	}
+}
+
+// SaveEncoding persists per-page-type encoding pipeline specs into
+// keeba.config.yaml at the wiki root. Empty values clear the field.
+// Operates on a yaml.Node tree so unknown / future fields the user has
+// in their config are preserved.
+func (c KeebaConfig) SaveEncoding(enc EncodingConfig) error {
+	target := filepath.Join(c.WikiRoot, "keeba.config.yaml")
+	root, err := loadYAMLDoc(target)
+	if err != nil {
+		return err
+	}
+	doc := docMap(root)
+	if doc == nil {
+		return fmt.Errorf("%s is not a YAML mapping at the top level", target)
+	}
+	encNode := ensureMapping(doc, "encoding")
+	setOrClearScalar(encNode, "function", enc.Function)
+	setOrClearScalar(encNode, "entity", enc.Entity)
+	setOrClearScalar(encNode, "narrative", enc.Narrative)
+
+	out, err := yaml.Marshal(root)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(target, out, 0o644)
 }
 
 // SaveGitHubRepo persists ingest.github.repo into keeba.config.yaml at the
@@ -197,22 +263,11 @@ func merge(dst *KeebaConfig, src KeebaConfig) {
 // KeebaConfig struct would drop them).
 func (c KeebaConfig) SaveGitHubRepo(repo string) error {
 	target := filepath.Join(c.WikiRoot, "keeba.config.yaml")
-	var root yaml.Node
-	if data, err := os.ReadFile(target); err == nil && len(data) > 0 {
-		if err := yaml.Unmarshal(data, &root); err != nil {
-			return fmt.Errorf("parse %s: %w", target, err)
-		}
+	root, err := loadYAMLDoc(target)
+	if err != nil {
+		return err
 	}
-	// If the file was empty or missing, build a minimal mapping doc.
-	if root.Kind == 0 {
-		root = yaml.Node{
-			Kind: yaml.DocumentNode,
-			Content: []*yaml.Node{
-				{Kind: yaml.MappingNode},
-			},
-		}
-	}
-	doc := docMap(&root)
+	doc := docMap(root)
 	if doc == nil {
 		return fmt.Errorf("%s is not a YAML mapping at the top level", target)
 	}
@@ -220,11 +275,50 @@ func (c KeebaConfig) SaveGitHubRepo(repo string) error {
 	github := ensureMapping(ingest, "github")
 	setScalar(github, "repo", repo)
 
-	out, err := yaml.Marshal(&root)
+	out, err := yaml.Marshal(root)
 	if err != nil {
 		return err
 	}
 	return os.WriteFile(target, out, 0o644)
+}
+
+// loadYAMLDoc reads target and returns the top-level yaml.Node tree, or a
+// fresh empty mapping document if the file is missing/empty. Used by
+// SaveEncoding / SaveGitHubRepo to round-trip through the AST so user
+// fields the struct doesn't know about survive round-trips.
+func loadYAMLDoc(target string) (*yaml.Node, error) {
+	root := &yaml.Node{}
+	if data, err := os.ReadFile(target); err == nil && len(data) > 0 {
+		if err := yaml.Unmarshal(data, root); err != nil {
+			return nil, fmt.Errorf("parse %s: %w", target, err)
+		}
+	}
+	if root.Kind == 0 {
+		root = &yaml.Node{
+			Kind: yaml.DocumentNode,
+			Content: []*yaml.Node{
+				{Kind: yaml.MappingNode},
+			},
+		}
+	}
+	return root, nil
+}
+
+// setOrClearScalar sets parent[key] to a scalar value, or removes the key
+// if value is empty. Lets SaveEncoding leave unset page-types absent from
+// the config rather than emitting empty strings.
+func setOrClearScalar(parent *yaml.Node, key, value string) {
+	if value == "" {
+		// Remove the key if present.
+		for i := 0; i+1 < len(parent.Content); i += 2 {
+			if parent.Content[i].Value == key {
+				parent.Content = append(parent.Content[:i], parent.Content[i+2:]...)
+				return
+			}
+		}
+		return
+	}
+	setScalar(parent, key, value)
 }
 
 // docMap returns the top-level mapping node for either a DocumentNode or a

@@ -25,6 +25,7 @@ func newBenchCmd() *cobra.Command {
 		encodingSpec       string
 		encodingGrid       bool
 		encodingGridByType bool
+		writeConfig        bool
 	)
 	cmd := &cobra.Command{
 		Use:   "bench",
@@ -131,6 +132,18 @@ ANTHROPIC_API_KEY to be set.`,
 							pt, typedGrid.PageCounts[pt])
 					}
 				}
+				if writeConfig {
+					enc := config.EncodingConfig{
+						Function:  pipelineSpec(typedGrid, bench.PageTypeFunction),
+						Entity:    pipelineSpec(typedGrid, bench.PageTypeEntity),
+						Narrative: pipelineSpec(typedGrid, bench.PageTypeNarrative),
+					}
+					if err := cfg.SaveEncoding(enc); err != nil {
+						return fmt.Errorf("save encoding to keeba.config.yaml: %w", err)
+					}
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(),
+						"keeba: wrote winners to keeba.config.yaml (encoding.{function,entity,narrative})")
+				}
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", rel)
 			return nil
@@ -149,7 +162,23 @@ ANTHROPIC_API_KEY to be set.`,
 		"run every candidate encoding pipeline and report the winner (respects the 4× quality cliff per plan §10).")
 	cmd.Flags().BoolVar(&encodingGridByType, "encoding-grid-by-type", false,
 		"partition wiki pages by detected page-type (function / entity / narrative) and run the grid per partition.")
+	cmd.Flags().BoolVar(&writeConfig, "write-config", false,
+		"after --encoding-grid-by-type, persist the per-type winners to keeba.config.yaml (encoding.{function,entity,narrative}).")
 	return cmd
+}
+
+// pipelineSpec returns the recommended pipeline name for the given
+// page-type from a TypedGridReport, or "" if the type isn't present or
+// has no winner under the quality cap.
+func pipelineSpec(rep bench.TypedGridReport, pt bench.PageType) string {
+	if rep.Types == nil {
+		return ""
+	}
+	g, ok := rep.Types[pt]
+	if !ok {
+		return ""
+	}
+	return g.Recommended
 }
 
 func runLLMBench(
