@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -137,6 +138,110 @@ func TestSummary_SortsByFileThenLine(t *testing.T) {
 	posServer := strings.Index(text, `"file": "src/server.go"`)
 	if posFoo < 0 || posServer < 0 || posFoo > posServer {
 		t.Errorf("expected foo.go before server.go, got %d vs %d", posFoo, posServer)
+	}
+}
+
+func TestFindCallers_ReturnsEdgesForCallee(t *testing.T) {
+	repo := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(repo, "src"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(repo, "src", "foo.go"),
+		[]byte(`package src
+
+func A() {
+	B()
+	B()
+}
+
+func C() {
+	B()
+}
+
+func B() {}
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := symbol.Compile(repo, repo); err != nil {
+		t.Fatalf("Compile: %v", err)
+	}
+
+	// Wiki bits required by search.Build.
+	writeFile(t, filepath.Join(repo, "concepts", "stub.md"),
+		validFM+"# stub\n\n> note\n\n## Sources\n\n## See Also\n")
+	cfg := config.Defaults()
+	cfg.WikiRoot = repo
+	s, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resps := roundTrip(t, s,
+		`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"find_callers","arguments":{"name":"B"}}}`,
+	)
+	text := mcpText(t, resps[0])
+	if !strings.Contains(text, `"callee": "B"`) {
+		t.Errorf("expected callee=B header, got %q", text)
+	}
+	// 3 call sites (two in A, one in C). Order: file, then line.
+	if !strings.Contains(text, `"count": 3`) {
+		t.Errorf("expected count=3, got %q", text)
+	}
+	if !strings.Contains(text, `"caller": "A"`) || !strings.Contains(text, `"caller": "C"`) {
+		t.Errorf("expected both A and C callers, got %q", text)
+	}
+}
+
+func TestFindCallers_FilePrefixFilter(t *testing.T) {
+	repo := t.TempDir()
+	for path, body := range map[string]string{
+		"a/foo.go": "package a\nfunc A() { Helper() }\nfunc Helper() {}\n",
+		"b/bar.go": "package b\nfunc B() { Helper() }\nfunc Helper() {}\n",
+	} {
+		full := filepath.Join(repo, path)
+		_ = os.MkdirAll(filepath.Dir(full), 0o755)
+		_ = os.WriteFile(full, []byte(body), 0o644)
+	}
+	if _, err := symbol.Compile(repo, repo); err != nil {
+		t.Fatalf("Compile: %v", err)
+	}
+	writeFile(t, filepath.Join(repo, "concepts", "stub.md"),
+		validFM+"# stub\n\n> note\n\n## Sources\n\n## See Also\n")
+	cfg := config.Defaults()
+	cfg.WikiRoot = repo
+	s, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resps := roundTrip(t, s,
+		`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"find_callers","arguments":{"name":"Helper","file":"a/"}}}`,
+	)
+	text := mcpText(t, resps[0])
+	if !strings.Contains(text, `"caller_file": "a/foo.go"`) {
+		t.Errorf("expected only a/foo.go callers, got %q", text)
+	}
+	if strings.Contains(text, `"caller_file": "b/bar.go"`) {
+		t.Errorf("file filter leaked b/ callers, got %q", text)
+	}
+}
+
+func TestFindCallers_NoSymbolGraph(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "concepts", "auth.md"),
+		validFM+"# Authentication\n\n> JWT-based session handling.\n\n## Sources\n\n## See Also\n")
+	cfg := config.Defaults()
+	cfg.WikiRoot = root
+	s, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resps := roundTrip(t, s,
+		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"find_callers","arguments":{"name":"foo"}}}`,
+	)
+	text := mcpText(t, resps[0])
+	if !strings.Contains(text, "keeba compile") {
+		t.Errorf("expected `keeba compile` hint when no graph, got %q", text)
 	}
 }
 

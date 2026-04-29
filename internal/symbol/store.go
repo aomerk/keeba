@@ -19,15 +19,18 @@ const (
 	SymbolsFile = "symbols.json"
 )
 
-// Index is the on-disk format. Wraps the symbol list with a small header
-// so future versions can bump the schema without breaking parse.
+// Index is the on-disk format. Wraps the symbol list and call-edge
+// graph with a small header so future versions can bump the schema
+// without breaking parse.
 type Index struct {
-	SchemaVersion int       `json:"schema_version"`
-	GeneratedAt   time.Time `json:"generated_at"`
-	RepoRoot      string    `json:"repo_root"`
-	NumFiles      int       `json:"num_files"`
-	NumSymbols    int       `json:"num_symbols"`
-	Symbols       []Symbol  `json:"symbols"`
+	SchemaVersion int        `json:"schema_version"`
+	GeneratedAt   time.Time  `json:"generated_at"`
+	RepoRoot      string     `json:"repo_root"`
+	NumFiles      int        `json:"num_files"`
+	NumSymbols    int        `json:"num_symbols"`
+	NumEdges      int        `json:"num_edges"`
+	Symbols       []Symbol   `json:"symbols"`
+	Edges         []CallEdge `json:"edges,omitempty"`
 }
 
 // IndexPath returns the canonical .keeba/symbols.json path for the
@@ -67,15 +70,20 @@ func Load(targetDir string) (Index, error) {
 }
 
 // Compile is the high-level entry point: walk repoRoot, extract every
-// symbol, and write the index under writeRoot/.keeba/symbols.json.
-// repoRoot and writeRoot are usually the same for `keeba compile <repo>`,
-// but can differ when compiling a source repo into a wiki dir.
+// symbol AND every call edge, and write the index under
+// writeRoot/.keeba/symbols.json. repoRoot and writeRoot are usually
+// the same for `keeba compile <repo>`, but can differ when compiling a
+// source repo into a wiki dir.
 func Compile(repoRoot, writeRoot string) (Index, error) {
 	abs, err := filepath.Abs(repoRoot)
 	if err != nil {
 		return Index{}, err
 	}
 	syms, err := ExtractRepo(abs)
+	if err != nil {
+		return Index{}, err
+	}
+	edges, err := ExtractCallsRepo(abs)
 	if err != nil {
 		return Index{}, err
 	}
@@ -86,12 +94,14 @@ func Compile(repoRoot, writeRoot string) (Index, error) {
 	}
 
 	idx := Index{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		GeneratedAt:   time.Now().UTC(),
 		RepoRoot:      abs,
 		NumFiles:      len(files),
 		NumSymbols:    len(syms),
+		NumEdges:      len(edges),
 		Symbols:       syms,
+		Edges:         edges,
 	}
 	if err := Save(writeRoot, idx); err != nil {
 		return idx, err

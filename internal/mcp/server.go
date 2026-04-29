@@ -224,6 +224,29 @@ func (s *Server) listTools() []map[string]any {
 			},
 		},
 		{
+			"name":        "find_callers",
+			"description": "Return every call site of a symbol from the precompiled call graph. Pairs with find_def: find_def says 'X is here', find_callers says 'X is called from these N sites'. Lets the agent answer 'what would break if I rename X' in two MCP calls instead of a grep loop.",
+			"inputSchema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"name": map[string]any{
+						"type":        "string",
+						"description": "Bare symbol name. Exact match.",
+					},
+					"file": map[string]any{
+						"type":        "string",
+						"description": "Optional file or directory prefix to scope results.",
+					},
+					"limit": map[string]any{
+						"type":        "integer",
+						"description": "Max results (default 25, max 200).",
+						"default":     25,
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+		{
 			"name":        "summary",
 			"description": "List all symbols in a file or directory from the precompiled symbol graph. Returns name, kind, file:line, signature for each — no source bodies. Lets agents skim a file's surface area cheaply.",
 			"inputSchema": map[string]any{
@@ -292,6 +315,8 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 		resp = s.toolQueryDocumentation(env.Arguments)
 	case "find_def":
 		resp = s.toolFindDef(env.Arguments)
+	case "find_callers":
+		resp = s.toolFindCallers(env.Arguments)
 	case "summary":
 		resp = s.toolSummary(env.Arguments)
 	case "read_chunk":
