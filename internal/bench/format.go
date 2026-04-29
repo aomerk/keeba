@@ -49,6 +49,32 @@ func truncate(s string, n int) string {
 	return s[:n-1] + "…"
 }
 
+// MarkdownEncodingGrid renders a GridReport as a markdown section
+// summarizing every candidate pipeline + the recommendation.
+func MarkdownEncodingGrid(r GridReport) string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "## Encoding grid (winner: `%s`)\n\n", r.Recommended)
+	if r.Recommended != "" {
+		fmt.Fprintf(&sb, "Pipelines compared: %d. Recommended pipeline shrinks the wiki by **%.2f×** (under the %.1f× quality cliff per plan §10).\n\n",
+			len(r.Reports), r.BestRatio, CompressionCap)
+	} else {
+		fmt.Fprintf(&sb, "Pipelines compared: %d. No pipeline cleared the %.1f× cap — wiki may be too small or page-types mismatch.\n\n",
+			len(r.Reports), CompressionCap)
+	}
+	fmt.Fprintln(&sb, "| Pipeline | Compression | Total raw | Total enc | Pages |")
+	fmt.Fprintln(&sb, "|---|---|---|---|---|")
+	for _, p := range r.Reports {
+		marker := ""
+		if p.Pipeline == r.Recommended {
+			marker = " ⭐"
+		}
+		fmt.Fprintf(&sb, "| `%s`%s | %.2f× | %d | %d | %d |\n",
+			p.Pipeline, marker, p.Ratio(), p.TotalRaw, p.TotalEnc, len(p.Pages))
+	}
+	fmt.Fprintln(&sb)
+	return sb.String()
+}
+
 // MarkdownEncoding renders an EncodingReport as a markdown section
 // suitable for appending to a bench output file (or printing standalone).
 func MarkdownEncoding(r EncodingReport) string {
