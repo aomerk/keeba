@@ -48,3 +48,26 @@ func truncate(s string, n int) string {
 	}
 	return s[:n-1] + "…"
 }
+
+// MarkdownEncoding renders an EncodingReport as a markdown section
+// suitable for appending to a bench output file (or printing standalone).
+func MarkdownEncoding(r EncodingReport) string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "## Encoding compression — `%s`\n\n", r.Pipeline)
+	if r.Ratio() > 0 {
+		fmt.Fprintf(&sb, "**Total: %d pages, %d → %d chars (%.2f× compression).**\n\n",
+			len(r.Pages), r.TotalRaw, r.TotalEnc, r.Ratio())
+	}
+	if len(r.Pages) == 0 {
+		fmt.Fprintln(&sb, "(no pages indexed)")
+		return sb.String()
+	}
+	fmt.Fprintln(&sb, "| Page | Raw chars | Encoded chars | Compression |")
+	fmt.Fprintln(&sb, "|---|---|---|---|")
+	for _, p := range r.Pages {
+		fmt.Fprintf(&sb, "| %s | %d | %d | %.2f× |\n",
+			truncate(p.Slug, 60), p.RawChars, p.EncChars, p.Ratio())
+	}
+	fmt.Fprintln(&sb)
+	return sb.String()
+}

@@ -22,6 +22,7 @@ func newBenchCmd() *cobra.Command {
 		out           string
 		llmProvider   string
 		maxRawChars   int
+		encodingSpec  string
 	)
 	cmd := &cobra.Command{
 		Use:   "bench",
@@ -57,6 +58,16 @@ ANTHROPIC_API_KEY to be set.`,
 				return err
 			}
 			md := bench.Markdown(rep)
+
+			var encRep bench.EncodingReport
+			if encodingSpec != "" {
+				encRep, err = bench.RunEncoding(cfg, encodingSpec)
+				if err != nil {
+					return fmt.Errorf("bench --encoding %q: %w", encodingSpec, err)
+				}
+				md += "\n" + bench.MarkdownEncoding(encRep)
+			}
+
 			if out == "" {
 				out = filepath.Join(cfg.WikiRoot, "_bench",
 					rep.When.Format("2006-01-02-1504")+".md")
@@ -68,6 +79,11 @@ ANTHROPIC_API_KEY to be set.`,
 			summary := fmt.Sprintf("keeba: %.1f× cheaper, %.1f× faster (%d questions; byte-count mode)",
 				safeInverse(rep.RatioTokens()), safeInverse(rep.RatioWall()), rep.N)
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), summary)
+			if encodingSpec != "" && encRep.Ratio() > 0 {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+					"keeba: encoding %s — %.2f× compression on %d pages (%d → %d chars)\n",
+					encRep.Pipeline, encRep.Ratio(), len(encRep.Pages), encRep.TotalRaw, encRep.TotalEnc)
+			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", rel)
 			return nil
 		},
@@ -78,6 +94,9 @@ ANTHROPIC_API_KEY to be set.`,
 	cmd.Flags().StringVar(&out, "out", "", "output markdown path (default: <wiki>/_bench/<date>.md)")
 	cmd.Flags().StringVar(&llmProvider, "llm", "", "LLM evaluator (anthropic) — runs the real wiki-vs-raw answer benchmark")
 	cmd.Flags().IntVar(&maxRawChars, "max-raw-chars", 100000, "cap on raw-mode context size (chars)")
+	cmd.Flags().StringVar(&encodingSpec, "encoding", "",
+		"encoding pipeline to also benchmark on the wiki (e.g. \"glossary,structural-card\"). "+
+			"Reports per-page compression after the standard wiki-vs-raw run.")
 	return cmd
 }
 
