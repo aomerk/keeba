@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -26,7 +27,14 @@ func newMCPCmd() *cobra.Command {
 				return err
 			}
 			srv.Version = Version
-			return srv.Serve(cmd.Context(), os.Stdin, os.Stdout)
+			err = srv.Serve(cmd.Context(), os.Stdin, os.Stdout)
+			// Receipt — visible in the agent's MCP server log even if
+			// the agent never calls session_stats explicitly. This is
+			// the marketing artifact: every session ends with a one-line
+			// "you saved N tokens with keeba" message in the user's
+			// editor's logs.
+			fmt.Fprintln(os.Stderr, srv.Stats().SummaryLine())
+			return err
 		},
 	})
 	cmd.AddCommand(newMCPInstallCmd())

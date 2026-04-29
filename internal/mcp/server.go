@@ -45,14 +45,21 @@ type rpcResponse struct {
 // Server is a stdio MCP server backed by a BM25 wiki index plus, when
 // available, a precompiled symbol graph (`.keeba/symbols.json` from
 // `keeba compile`). The symbol graph powers the find_def / summary
-// tools that let an agent skip its grep loop.
+// tools that let an agent skip its grep loop. SessionStats accumulates
+// per-tool savings so callers can render the "you saved $X this session"
+// receipt — the user-visible reason to install keeba.
 type Server struct {
 	cfg        config.KeebaConfig
 	idx        *search.Index
 	syms       *symbol.Index
 	symsByName map[string][]symbol.Symbol
+	stats      *SessionStats
 	Version    string // surfaced as serverInfo.version on initialize
 }
+
+// Stats exposes the live session counters. Useful when callers want to
+// log the receipt at server shutdown.
+func (s *Server) Stats() *SessionStats { return s.stats }
 
 // New builds the BM25 index up-front so /tools/call queries are fast,
 // and tries to load a precompiled symbol graph from the wiki/repo root.
@@ -62,7 +69,7 @@ func New(cfg config.KeebaConfig) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("build index: %w", err)
 	}
-	srv := &Server{cfg: cfg, idx: idx, Version: "dev"}
+	srv := &Server{cfg: cfg, idx: idx, stats: &SessionStats{}, Version: "dev"}
 
 	// Optional: load symbol graph from .keeba/symbols.json. Missing graph
 	// is fine — the symbol-aware tools just respond with a hint to run
@@ -230,6 +237,14 @@ func (s *Server) listTools() []map[string]any {
 			},
 		},
 		{
+			"name":        "session_stats",
+			"description": "Return live counters for this MCP session: tool calls, bytes returned, bytes the agent would have pulled in unfiltered (read_chunk only), and the implied token savings. Agents and humans use this to render the 'you saved $X this session' receipt — the honest answer to 'is keeba worth installing'.",
+			"inputSchema": map[string]any{
+				"type":       "object",
+				"properties": map[string]any{},
+			},
+		},
+		{
 			"name":        "read_chunk",
 			"description": "Read an exact line range from a file. Pair with find_def: find_def gives you the symbol's file + line range; read_chunk pulls just that body. Typically 30-200 lines instead of an 800-line read_file of the whole file. Path is repo-relative; absolute paths and traversal outside the repo root are rejected.",
 			"inputSchema": map[string]any{
@@ -265,17 +280,51 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 	if err := json.Unmarshal(raw, &env); err != nil {
 		return rpcResponse{Error: &rpcError{Code: -32602, Message: "bad params: " + err.Error()}}
 	}
+
+	var resp rpcResponse
 	switch env.Name {
 	case "query_documentation":
-		return s.toolQueryDocumentation(env.Arguments)
+		resp = s.toolQueryDocumentation(env.Arguments)
 	case "find_def":
-		return s.toolFindDef(env.Arguments)
+		resp = s.toolFindDef(env.Arguments)
 	case "summary":
-		return s.toolSummary(env.Arguments)
+		resp = s.toolSummary(env.Arguments)
 	case "read_chunk":
-		return s.toolReadChunk(env.Arguments)
+		resp = s.toolReadChunk(env.Arguments)
+	case "session_stats":
+		resp = s.toolSessionStats(env.Arguments)
+	default:
+		return rpcResponse{Error: &rpcError{Code: -32602, Message: "unknown tool: " + env.Name}}
 	}
-	return rpcResponse{Error: &rpcError{Code: -32602, Message: "unknown tool: " + env.Name}}
+
+	// Account: every tool call records its returned bytes; tools that
+	// can compute a measurable savings (read_chunk vs. full file read)
+	// also report the alternative size, which makes the session_stats
+	// receipt an honest number rather than a vibe.
+	returned, alternative := responseSize(resp), 0
+	if env.Name == "read_chunk" {
+		alternative = readChunkAlternative(s.cfg.WikiRoot, env.Arguments)
+	}
+	s.stats.Record(env.Name, returned, alternative)
+	return resp
+}
+
+// responseSize returns the rough byte size of a tool response — the
+// content text length, ignoring JSON-RPC envelope overhead.
+func responseSize(r rpcResponse) int {
+	res, ok := r.Result.(map[string]any)
+	if !ok {
+		return 0
+	}
+	content, ok := res["content"].([]map[string]string)
+	if !ok {
+		return 0
+	}
+	n := 0
+	for _, c := range content {
+		n += len(c["text"])
+	}
+	return n
 }
 
 // queryDocArgs is the argument shape for the existing BM25 wiki search.
