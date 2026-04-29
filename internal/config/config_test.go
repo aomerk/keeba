@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -131,5 +132,127 @@ func TestLoadInvalidYAMLReturnsError(t *testing.T) {
 	_, err := Load(dir)
 	if err == nil {
 		t.Fatal("expected error from invalid yaml")
+	}
+}
+
+func TestEncodingPipelineForType(t *testing.T) {
+	enc := EncodingConfig{
+		Function:  "glossary,structural-card",
+		Entity:    "dense-tuple",
+		Narrative: "glossary,caveman",
+	}
+	cases := map[string]string{
+		"function":  "glossary,structural-card",
+		"entity":    "dense-tuple",
+		"narrative": "glossary,caveman",
+		"unknown":   "",
+		"":          "",
+	}
+	for k, want := range cases {
+		t.Run(k, func(t *testing.T) {
+			if got := enc.PipelineForType(k); got != want {
+				t.Errorf("PipelineForType(%q) = %q, want %q", k, got, want)
+			}
+		})
+	}
+}
+
+func TestLoadEncodingFromYAML(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "keeba.config.yaml"), `
+name: test
+encoding:
+  function: glossary,structural-card
+  narrative: glossary,caveman
+`)
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Encoding.Function != "glossary,structural-card" {
+		t.Errorf("Encoding.Function = %q", cfg.Encoding.Function)
+	}
+	if cfg.Encoding.Narrative != "glossary,caveman" {
+		t.Errorf("Encoding.Narrative = %q", cfg.Encoding.Narrative)
+	}
+	if cfg.Encoding.Entity != "" {
+		t.Errorf("Encoding.Entity should be empty, got %q", cfg.Encoding.Entity)
+	}
+}
+
+func TestSaveEncodingRoundTripsExistingFields(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "keeba.config.yaml")
+	// Pre-existing config with fields the struct doesn't model
+	// (custom_field) plus a known field (name).
+	writeFile(t, target, `
+name: hand-written
+custom_field: must-survive
+ingest:
+  github:
+    repo: aomerk/keeba
+`)
+
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+
+	if err := cfg.SaveEncoding(EncodingConfig{
+		Function:  "glossary,structural-card",
+		Narrative: "glossary,caveman",
+	}); err != nil {
+		t.Fatalf("SaveEncoding: %v", err)
+	}
+
+	out, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(out)
+	for _, want := range []string{
+		"name: hand-written",
+		"custom_field: must-survive",
+		"repo: aomerk/keeba",
+		"function: glossary,structural-card",
+		"narrative: glossary,caveman",
+	} {
+		if !strings.Contains(s, want) {
+			t.Errorf("missing %q in output:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "entity:") {
+		t.Errorf("empty Entity should not be persisted, got:\n%s", s)
+	}
+}
+
+func TestSaveEncodingClearsRemovedFields(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "keeba.config.yaml")
+	writeFile(t, target, `
+name: x
+encoding:
+  function: glossary,structural-card
+  entity: dense-tuple
+`)
+	cfg, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+
+	// Save with only function set; entity should be cleared.
+	if err := cfg.SaveEncoding(EncodingConfig{
+		Function: "structural-card",
+	}); err != nil {
+		t.Fatalf("SaveEncoding: %v", err)
+	}
+
+	out, _ := os.ReadFile(target)
+	s := string(out)
+	if !strings.Contains(s, "function: structural-card") {
+		t.Errorf("expected updated function, got:\n%s", s)
+	}
+	if strings.Contains(s, "entity:") {
+		t.Errorf("entity should be cleared, got:\n%s", s)
 	}
 }
