@@ -81,12 +81,15 @@ func TestToolsList(t *testing.T) {
 	s := corpusServer(t)
 	resps := roundTrip(t, s, `{"jsonrpc":"2.0","id":2,"method":"tools/list"}`)
 	tools := resps[0]["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 1 {
-		t.Fatalf("expected 1 tool, got %d", len(tools))
+
+	gotNames := map[string]bool{}
+	for _, t := range tools {
+		gotNames[t.(map[string]any)["name"].(string)] = true
 	}
-	tool := tools[0].(map[string]any)
-	if tool["name"] != "query_documentation" {
-		t.Errorf("tool name: %v", tool["name"])
+	for _, want := range []string{"query_documentation", "find_def", "summary"} {
+		if !gotNames[want] {
+			t.Errorf("missing tool %q in tools/list, got %v", want, gotNames)
+		}
 	}
 }
 
