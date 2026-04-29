@@ -114,6 +114,8 @@ func TestBuildPipeline(t *testing.T) {
 		{"glossary alias", "glossary", "glossary-dedupe", false},
 		{"card alias", "card", "structural-card", false},
 		{"chain", "glossary,structural-card", "glossary-dedupe+structural-card", false},
+		{"plus separator round-trip", "glossary-dedupe+md-caveman", "glossary-dedupe+md-caveman", false},
+		{"mixed separators", "glossary+md-caveman,structural-card", "glossary-dedupe+md-caveman+structural-card", false},
 		{"unknown", "wat", "", true},
 		{"trims spaces", "  glossary , caveman  ", "glossary-dedupe+md-caveman", false},
 	}
