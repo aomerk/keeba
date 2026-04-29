@@ -17,9 +17,13 @@ var ingestTemplates embed.FS
 // supportedIngestSources is the v0.1 set. Each maps to an embedded
 // agents/<source>-ingest.md template that the user runs themselves (in
 // Claude Code, Cursor, Codex, or claude.ai routine) to do the actual ingest.
+//
+// `--execute` is wired for "git" and "github". Other sources still print
+// their prompt template for an external runner.
 var supportedIngestSources = map[string]string{
-	"git":   "ingest_templates/git.md",
-	"slack": "ingest_templates/slack.md",
+	"git":    "ingest_templates/git.md",
+	"github": "ingest_templates/github.md",
+	"slack":  "ingest_templates/slack.md",
 }
 
 func newIngestCmd() *cobra.Command {
@@ -28,6 +32,8 @@ func newIngestCmd() *cobra.Command {
 		execute bool
 		repo    string
 		since   string
+		ghRepo  string
+		ghLimit int
 	)
 	cmd := &cobra.Command{
 		Use:   "ingest SOURCE",
@@ -49,10 +55,14 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			source := args[0]
 			if execute {
-				if source != "git" {
-					return fmt.Errorf("--execute is only wired for git in v0.3; got %q", source)
+				switch source {
+				case "git":
+					return runGitIngest(cmd, repo, since, dryRun)
+				case "github":
+					return runGitHubIngest(cmd, ghRepo, since, ghLimit, dryRun)
+				default:
+					return fmt.Errorf("--execute supports git or github; got %q", source)
 				}
-				return runGitIngest(cmd, repo, since, dryRun)
 			}
 
 			path, ok := supportedIngestSources[source]
@@ -92,8 +102,10 @@ Examples:
 	}
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "preview without writing (works with --execute too)")
 	cmd.Flags().BoolVar(&execute, "execute", false, "run the ingest heuristic in-process instead of writing the template")
-	cmd.Flags().StringVar(&repo, "repo", ".", "path to the source repo (for --execute)")
-	cmd.Flags().StringVar(&since, "since", "7.days.ago", "git --since spec for --execute")
+	cmd.Flags().StringVar(&repo, "repo", ".", "git source: path to the local repo (for `keeba ingest git --execute`)")
+	cmd.Flags().StringVar(&since, "since", "7.days.ago", "time window for --execute (git accepts git --since; github accepts 30d / 168h / RFC3339)")
+	cmd.Flags().StringVar(&ghRepo, "github-repo", "", "github source: OWNER/NAME (default: detect from origin remote)")
+	cmd.Flags().IntVar(&ghLimit, "github-limit", 200, "max PRs to scan per github ingest run")
 	return cmd
 }
 

@@ -26,13 +26,27 @@ type DriftConfig struct {
 	GigarepoRoot     string   `yaml:"gigarepo_root"`
 }
 
+// IngestConfig caches per-source settings users would otherwise have to
+// pass on every CLI invocation (notably which GitHub repo to ingest from).
+type IngestConfig struct {
+	GitHub IngestGitHubConfig `yaml:"github"`
+}
+
+// IngestGitHubConfig holds GitHub-specific ingest defaults.
+type IngestGitHubConfig struct {
+	// Repo is "owner/name". When set, `keeba ingest github` uses it without
+	// prompting. Override at the CLI with --github-repo.
+	Repo string `yaml:"repo"`
+}
+
 // KeebaConfig is the resolved configuration plus the wiki root path.
 type KeebaConfig struct {
-	SchemaVersion int         `yaml:"schema_version"`
-	Name          string      `yaml:"name"`
-	Purpose       string      `yaml:"purpose"`
-	Lint          LintConfig  `yaml:"lint"`
-	Drift         DriftConfig `yaml:"drift"`
+	SchemaVersion int          `yaml:"schema_version"`
+	Name          string       `yaml:"name"`
+	Purpose       string       `yaml:"purpose"`
+	Lint          LintConfig   `yaml:"lint"`
+	Drift         DriftConfig  `yaml:"drift"`
+	Ingest        IngestConfig `yaml:"ingest"`
 
 	// WikiRoot is the directory that owns this config (or the directory the
 	// caller asked us to treat as the wiki root). Always absolute.
@@ -172,6 +186,97 @@ func merge(dst *KeebaConfig, src KeebaConfig) {
 	if src.Drift.GigarepoRoot != "" {
 		dst.Drift.GigarepoRoot = src.Drift.GigarepoRoot
 	}
+	if src.Ingest.GitHub.Repo != "" {
+		dst.Ingest.GitHub.Repo = src.Ingest.GitHub.Repo
+	}
+}
+
+// SaveGitHubRepo persists ingest.github.repo into keeba.config.yaml at the
+// wiki root. Operates on a yaml.Node tree so unknown / future fields the
+// user has in their config are preserved (round-tripping through the
+// KeebaConfig struct would drop them).
+func (c KeebaConfig) SaveGitHubRepo(repo string) error {
+	target := filepath.Join(c.WikiRoot, "keeba.config.yaml")
+	var root yaml.Node
+	if data, err := os.ReadFile(target); err == nil && len(data) > 0 {
+		if err := yaml.Unmarshal(data, &root); err != nil {
+			return fmt.Errorf("parse %s: %w", target, err)
+		}
+	}
+	// If the file was empty or missing, build a minimal mapping doc.
+	if root.Kind == 0 {
+		root = yaml.Node{
+			Kind: yaml.DocumentNode,
+			Content: []*yaml.Node{
+				{Kind: yaml.MappingNode},
+			},
+		}
+	}
+	doc := docMap(&root)
+	if doc == nil {
+		return fmt.Errorf("%s is not a YAML mapping at the top level", target)
+	}
+	ingest := ensureMapping(doc, "ingest")
+	github := ensureMapping(ingest, "github")
+	setScalar(github, "repo", repo)
+
+	out, err := yaml.Marshal(&root)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(target, out, 0o644)
+}
+
+// docMap returns the top-level mapping node for either a DocumentNode or a
+// bare MappingNode. nil if neither.
+func docMap(root *yaml.Node) *yaml.Node {
+	if root.Kind == yaml.DocumentNode && len(root.Content) > 0 {
+		root = root.Content[0]
+	}
+	if root.Kind != yaml.MappingNode {
+		return nil
+	}
+	return root
+}
+
+// ensureMapping returns the mapping value for key under parent, creating
+// it if missing.
+func ensureMapping(parent *yaml.Node, key string) *yaml.Node {
+	for i := 0; i+1 < len(parent.Content); i += 2 {
+		if parent.Content[i].Value == key {
+			child := parent.Content[i+1]
+			if child.Kind == yaml.MappingNode {
+				return child
+			}
+			// Replace whatever's there with an empty mapping.
+			child.Kind = yaml.MappingNode
+			child.Tag = "!!map"
+			child.Content = nil
+			return child
+		}
+	}
+	keyNode := &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key}
+	valNode := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+	parent.Content = append(parent.Content, keyNode, valNode)
+	return valNode
+}
+
+// setScalar sets parent[key] to a string scalar, replacing any existing
+// value at that key.
+func setScalar(parent *yaml.Node, key, value string) {
+	for i := 0; i+1 < len(parent.Content); i += 2 {
+		if parent.Content[i].Value == key {
+			parent.Content[i+1].Kind = yaml.ScalarNode
+			parent.Content[i+1].Tag = "!!str"
+			parent.Content[i+1].Value = value
+			parent.Content[i+1].Content = nil
+			return
+		}
+	}
+	parent.Content = append(parent.Content,
+		&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
+		&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: value},
+	)
 }
 
 // GigarepoRoot returns the absolute path to the directory citation paths are
