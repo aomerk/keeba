@@ -1,0 +1,5455 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-04-29T11:34:27.347643795Z",
+  "repo_root": "/home/ali/keeba-go",
+  "num_files": 83,
+  "num_symbols": 570,
+  "symbols": [
+    {
+      "name": "main",
+      "kind": "function",
+      "file": "cmd/keeba/main.go",
+      "start_line": 12,
+      "end_line": 22,
+      "signature": "func main()",
+      "language": "go"
+    },
+    {
+      "name": "CharsPerToken",
+      "kind": "const",
+      "file": "internal/bench/bench.go",
+      "start_line": 26,
+      "end_line": 26,
+      "signature": "const CharsPerToken",
+      "doc": "CharsPerToken is the OpenAI/Anthropic rule-of-thumb conversion. v0.1 uses\nit for the headline ratio; v0.2 can swap in a real tokenizer.",
+      "language": "go"
+    },
+    {
+      "name": "Question",
+      "kind": "type",
+      "file": "internal/bench/bench.go",
+      "start_line": 29,
+      "end_line": 32,
+      "signature": "type Question struct{...}",
+      "doc": "Question is one prompt fed to both modes.",
+      "language": "go"
+    },
+    {
+      "name": "DefaultCodeQuestions",
+      "kind": "var",
+      "file": "internal/bench/bench.go",
+      "start_line": 36,
+      "end_line": 42,
+      "signature": "var DefaultCodeQuestions",
+      "doc": "DefaultCodeQuestions ships with v0.1 — what an engineer would actually\nask of a code-project wiki. Editable per-corpus via --questions.",
+      "language": "go"
+    },
+    {
+      "name": "Result",
+      "kind": "type",
+      "file": "internal/bench/bench.go",
+      "start_line": 45,
+      "end_line": 52,
+      "signature": "type Result struct{...}",
+      "doc": "Result is the per-mode-per-question measurement.",
+      "language": "go"
+    },
+    {
+      "name": "Report",
+      "kind": "type",
+      "file": "internal/bench/bench.go",
+      "start_line": 55,
+      "end_line": 62,
+      "signature": "type Report struct{...}",
+      "doc": "Report is the aggregate of one bench run.",
+      "language": "go"
+    },
+    {
+      "name": "AggregateRow",
+      "kind": "type",
+      "file": "internal/bench/bench.go",
+      "start_line": 65,
+      "end_line": 69,
+      "signature": "type AggregateRow struct{...}",
+      "doc": "AggregateRow sums Chars/Tokens/Wall across all questions for one mode.",
+      "language": "go"
+    },
+    {
+      "name": "RatioTokens",
+      "kind": "method",
+      "file": "internal/bench/bench.go",
+      "start_line": 72,
+      "end_line": 77,
+      "signature": "func (Report) RatioTokens() float64",
+      "doc": "RatioTokens returns wiki/raw token ratio (smaller = wiki saves more).",
+      "receiver": "Report",
+      "language": "go"
+    },
+    {
+      "name": "RatioWall",
+      "kind": "method",
+      "file": "internal/bench/bench.go",
+      "start_line": 80,
+      "end_line": 85,
+      "signature": "func (Report) RatioWall() float64",
+      "doc": "RatioWall returns wiki/raw wall-time ratio.",
+      "receiver": "Report",
+      "language": "go"
+    },
+    {
+      "name": "Run",
+      "kind": "function",
+      "file": "internal/bench/bench.go",
+      "start_line": 92,
+      "end_line": 121,
+      "signature": "func Run(cfg config.KeebaConfig, qs []Question, rawPaths []string, topK int) (Report, error)",
+      "doc": "Run executes the benchmark over the given questions.\n\nrawPaths are absolute or wiki-root-relative paths that \"raw mode\" reads.\nIf rawPaths is empty the bench falls back to the wiki root itself, which\nmakes the comparison degenerate but still runnable for smoke tests.",
+      "language": "go"
+    },
+    {
+      "name": "runWiki",
+      "kind": "function",
+      "file": "internal/bench/bench.go",
+      "start_line": 123,
+      "end_line": 136,
+      "signature": "func runWiki(idx *search.Index, q Question, k int) Result",
+      "language": "go"
+    },
+    {
+      "name": "runRaw",
+      "kind": "function",
+      "file": "internal/bench/bench.go",
+      "start_line": 138,
+      "end_line": 179,
+      "signature": "func runRaw(cfg config.KeebaConfig, q Question, rawPaths []string) (Result, error)",
+      "language": "go"
+    },
+    {
+      "name": "isTextFile",
+      "kind": "function",
+      "file": "internal/bench/bench.go",
+      "start_line": 181,
+      "end_line": 189,
+      "signature": "func isTextFile(path string) bool",
+      "language": "go"
+    },
+    {
+      "name": "writeFile",
+      "kind": "function",
+      "file": "internal/bench/bench_test.go",
+      "start_line": 15,
+      "end_line": 23,
+      "signature": "func writeFile(t *testing.T, p, body string)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunProducesNonZero",
+      "kind": "function",
+      "file": "internal/bench/bench_test.go",
+      "start_line": 25,
+      "end_line": 51,
+      "signature": "func TestRunProducesNonZero(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMarkdownContainsExpectedShape",
+      "kind": "function",
+      "file": "internal/bench/bench_test.go",
+      "start_line": 53,
+      "end_line": 68,
+      "signature": "func TestMarkdownContainsExpectedShape(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEmptyCorpus",
+      "kind": "function",
+      "file": "internal/bench/bench_test.go",
+      "start_line": 70,
+      "end_line": 80,
+      "signature": "func TestRunEmptyCorpus(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "EncodingReport",
+      "kind": "type",
+      "file": "internal/bench/encoding.go",
+      "start_line": 16,
+      "end_line": 21,
+      "signature": "type EncodingReport struct{...}",
+      "doc": "EncodingReport summarizes the compression achieved by running an\nencoding pipeline over every page in the wiki.",
+      "language": "go"
+    },
+    {
+      "name": "EncodingPage",
+      "kind": "type",
+      "file": "internal/bench/encoding.go",
+      "start_line": 24,
+      "end_line": 28,
+      "signature": "type EncodingPage struct{...}",
+      "doc": "EncodingPage is the raw / encoded byte count for one page.",
+      "language": "go"
+    },
+    {
+      "name": "Ratio",
+      "kind": "method",
+      "file": "internal/bench/encoding.go",
+      "start_line": 32,
+      "end_line": 37,
+      "signature": "func (EncodingReport) Ratio() float64",
+      "doc": "Ratio returns raw/encoded — values \u003e 1 mean the encoder shrank the\ncontent. Returns 0 if no encoded bytes (degenerate / empty wiki).",
+      "receiver": "EncodingReport",
+      "language": "go"
+    },
+    {
+      "name": "Ratio",
+      "kind": "method",
+      "file": "internal/bench/encoding.go",
+      "start_line": 40,
+      "end_line": 45,
+      "signature": "func (EncodingPage) Ratio() float64",
+      "doc": "Ratio returns the raw/encoded ratio for a single page.",
+      "receiver": "EncodingPage",
+      "language": "go"
+    },
+    {
+      "name": "RunEncoding",
+      "kind": "function",
+      "file": "internal/bench/encoding.go",
+      "start_line": 52,
+      "end_line": 95,
+      "signature": "func RunEncoding(cfg config.KeebaConfig, spec string) (EncodingReport, error)",
+      "doc": "RunEncoding loads every page in the wiki, runs the configured encoding\npipeline over the body (frontmatter is stripped first), and reports the\nraw vs encoded character counts. The pipeline's Fit hook is called on\nthe full corpus before any Encode, so glossary-style stateful encoders\nsee real frequency data.",
+      "language": "go"
+    },
+    {
+      "name": "fixtureWiki",
+      "kind": "function",
+      "file": "internal/bench/encoding_test.go",
+      "start_line": 14,
+      "end_line": 32,
+      "signature": "func fixtureWiki(t *testing.T, pages map[string]string) config.KeebaConfig",
+      "doc": "fixtureWiki writes a minimal wiki tree under t.TempDir and returns a\nloaded config rooted there.",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEncodingRawIsNoop",
+      "kind": "function",
+      "file": "internal/bench/encoding_test.go",
+      "start_line": 34,
+      "end_line": 52,
+      "signature": "func TestRunEncodingRawIsNoop(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEncodingCavemanCompresses",
+      "kind": "function",
+      "file": "internal/bench/encoding_test.go",
+      "start_line": 54,
+      "end_line": 69,
+      "signature": "func TestRunEncodingCavemanCompresses(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEncodingUnknownPipelineErrors",
+      "kind": "function",
+      "file": "internal/bench/encoding_test.go",
+      "start_line": 71,
+      "end_line": 77,
+      "signature": "func TestRunEncodingUnknownPipelineErrors(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEncodingMultiPageAggregates",
+      "kind": "function",
+      "file": "internal/bench/encoding_test.go",
+      "start_line": 79,
+      "end_line": 102,
+      "signature": "func TestRunEncodingMultiPageAggregates(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestEncodingReportEmptyRatio",
+      "kind": "function",
+      "file": "internal/bench/encoding_test.go",
+      "start_line": 104,
+      "end_line": 112,
+      "signature": "func TestEncodingReportEmptyRatio(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMarkdownEncodingIncludesPipelineAndRatio",
+      "kind": "function",
+      "file": "internal/bench/encoding_test.go",
+      "start_line": 114,
+      "end_line": 131,
+      "signature": "func TestMarkdownEncodingIncludesPipelineAndRatio(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Markdown",
+      "kind": "function",
+      "file": "internal/bench/format.go",
+      "start_line": 10,
+      "end_line": 43,
+      "signature": "func Markdown(r Report) string",
+      "doc": "Markdown renders a Report as a stable markdown document suitable for\ncommitting to wiki/_bench/\u003cdate\u003e.md.",
+      "language": "go"
+    },
+    {
+      "name": "truncate",
+      "kind": "function",
+      "file": "internal/bench/format.go",
+      "start_line": 45,
+      "end_line": 50,
+      "signature": "func truncate(s string, n int) string",
+      "language": "go"
+    },
+    {
+      "name": "MarkdownEncodingGridByType",
+      "kind": "function",
+      "file": "internal/bench/format.go",
+      "start_line": 54,
+      "end_line": 88,
+      "signature": "func MarkdownEncodingGridByType(r TypedGridReport) string",
+      "doc": "MarkdownEncodingGridByType renders a TypedGridReport showing the\nper-page-type winner and side-by-side compression numbers.",
+      "language": "go"
+    },
+    {
+      "name": "MarkdownEncodingGrid",
+      "kind": "function",
+      "file": "internal/bench/format.go",
+      "start_line": 92,
+      "end_line": 114,
+      "signature": "func MarkdownEncodingGrid(r GridReport) string",
+      "doc": "MarkdownEncodingGrid renders a GridReport as a markdown section\nsummarizing every candidate pipeline + the recommendation.",
+      "language": "go"
+    },
+    {
+      "name": "MarkdownEncoding",
+      "kind": "function",
+      "file": "internal/bench/format.go",
+      "start_line": 118,
+      "end_line": 137,
+      "signature": "func MarkdownEncoding(r EncodingReport) string",
+      "doc": "MarkdownEncoding renders an EncodingReport as a markdown section\nsuitable for appending to a bench output file (or printing standalone).",
+      "language": "go"
+    },
+    {
+      "name": "CandidatePipelines",
+      "kind": "var",
+      "file": "internal/bench/grid.go",
+      "start_line": 18,
+      "end_line": 26,
+      "signature": "var CandidatePipelines",
+      "doc": "CandidatePipelines lists the encoding stacks `keeba bench --encoding-grid`\nevaluates by default. Keep in sync with plan §10 + the empirical winners\nfrom docs/encoding-bench-2026-04-29.md:\n  - \"raw\" baseline (no-op)\n  - narrative-page candidates (caveman, glossary stacked)\n  - function/code-page candidates (structural-card, glossary stacked)\n  - entity/fact-page candidate (dense-tuple)\n\nOrder is stable so grid output diffs cleanly across runs.",
+      "language": "go"
+    },
+    {
+      "name": "CompressionCap",
+      "kind": "const",
+      "file": "internal/bench/grid.go",
+      "start_line": 32,
+      "end_line": 32,
+      "signature": "const CompressionCap",
+      "doc": "CompressionCap is plan §10's \"don't compress past 4× — quality cliff\"\nrule, with a small tolerance to allow plans like glossary+structural-card\n(4.15× on CSN) to still rank as winners. Anything past CompressionCap is\ntreated as suspicious and excluded from the recommendation.",
+      "language": "go"
+    },
+    {
+      "name": "GridReport",
+      "kind": "type",
+      "file": "internal/bench/grid.go",
+      "start_line": 35,
+      "end_line": 39,
+      "signature": "type GridReport struct{...}",
+      "doc": "GridReport is the per-pipeline result of the encoding grid.",
+      "language": "go"
+    },
+    {
+      "name": "RunEncodingGrid",
+      "kind": "function",
+      "file": "internal/bench/grid.go",
+      "start_line": 44,
+      "end_line": 72,
+      "signature": "func RunEncodingGrid(cfg config.KeebaConfig) (GridReport, error)",
+      "doc": "RunEncodingGrid runs every CandidatePipelines entry against the wiki\nand returns a sorted (highest-ratio-first) GridReport plus the\nrecommendation that respects CompressionCap.",
+      "language": "go"
+    },
+    {
+      "name": "PageType",
+      "kind": "type",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 19,
+      "end_line": 19,
+      "signature": "type PageType encoding.PageType",
+      "doc": "PageType is re-exported from internal/encoding so both bench and\nscaffold can import the type without a cycle. The constants below\npreserve the bench package's public API for existing callers\n(the CLI uses bench.PageTypeFunction).",
+      "language": "go"
+    },
+    {
+      "name": "PageTypeFunction",
+      "kind": "const",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 23,
+      "end_line": 23,
+      "signature": "const PageTypeFunction",
+      "doc": "Page-type constants re-exported from internal/encoding.",
+      "language": "go"
+    },
+    {
+      "name": "PageTypeEntity",
+      "kind": "const",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 24,
+      "end_line": 24,
+      "signature": "const PageTypeEntity",
+      "doc": "Page-type constants re-exported from internal/encoding.",
+      "language": "go"
+    },
+    {
+      "name": "PageTypeNarrative",
+      "kind": "const",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 25,
+      "end_line": 25,
+      "signature": "const PageTypeNarrative",
+      "doc": "Page-type constants re-exported from internal/encoding.",
+      "language": "go"
+    },
+    {
+      "name": "pageRecord",
+      "kind": "type",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 33,
+      "end_line": 37,
+      "signature": "type pageRecord struct{...}",
+      "doc": "pageRecord is one wiki page with its detected type and stripped body.",
+      "language": "go"
+    },
+    {
+      "name": "loadPagesWithType",
+      "kind": "function",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 42,
+      "end_line": 67,
+      "signature": "func loadPagesWithType(cfg config.KeebaConfig) ([]pageRecord, error)",
+      "doc": "loadPagesWithType reads every wiki page, strips frontmatter, and tags\neach with its detected PageType. cited_files frontmatter is consulted\nfor stronger function-page detection on imported code pages.",
+      "language": "go"
+    },
+    {
+      "name": "citedFilesFromFrontmatter",
+      "kind": "function",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 69,
+      "end_line": 85,
+      "signature": "func citedFilesFromFrontmatter(fm map[string]any) []string",
+      "language": "go"
+    },
+    {
+      "name": "TypedGridReport",
+      "kind": "type",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 89,
+      "end_line": 94,
+      "signature": "type TypedGridReport struct{...}",
+      "doc": "TypedGridReport is the per-page-type encoding-grid result. Keys are\npage types; values are the GridReport for the pages of that type.",
+      "language": "go"
+    },
+    {
+      "name": "RunEncodingGridByType",
+      "kind": "function",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 100,
+      "end_line": 148,
+      "signature": "func RunEncodingGridByType(cfg config.KeebaConfig) (TypedGridReport, error)",
+      "doc": "RunEncodingGridByType partitions wiki pages by detected PageType and\nruns the candidate-pipeline grid against each partition independently.\nEmpty partitions are omitted from the report. Plan §10's central claim\n— page-type matters more than aggressive compression — relies on this.",
+      "language": "go"
+    },
+    {
+      "name": "runEncodingOnRecords",
+      "kind": "function",
+      "file": "internal/bench/grid_by_type.go",
+      "start_line": 153,
+      "end_line": 182,
+      "signature": "func runEncodingOnRecords(spec string, pages []pageRecord) (EncodingReport, error)",
+      "doc": "runEncodingOnRecords is RunEncoding's core, but operating on an\nalready-loaded slice of pageRecords instead of re-walking the wiki.\nLets the per-type grid avoid N×K re-reads.",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEncodingGridByType_PartitionsByDetectedType",
+      "kind": "function",
+      "file": "internal/bench/grid_by_type_test.go",
+      "start_line": 10,
+      "end_line": 44,
+      "signature": "func TestRunEncodingGridByType_PartitionsByDetectedType(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEncodingGridByType_EmptyWiki",
+      "kind": "function",
+      "file": "internal/bench/grid_by_type_test.go",
+      "start_line": 46,
+      "end_line": 55,
+      "signature": "func TestRunEncodingGridByType_EmptyWiki(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMarkdownEncodingGridByType_RendersAllPresentTypes",
+      "kind": "function",
+      "file": "internal/bench/grid_by_type_test.go",
+      "start_line": 57,
+      "end_line": 91,
+      "signature": "func TestMarkdownEncodingGridByType_RendersAllPresentTypes(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMarkdownEncodingGridByType_NoPages",
+      "kind": "function",
+      "file": "internal/bench/grid_by_type_test.go",
+      "start_line": 93,
+      "end_line": 98,
+      "signature": "func TestMarkdownEncodingGridByType_NoPages(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestCitedFilesFromFrontmatter",
+      "kind": "function",
+      "file": "internal/bench/grid_by_type_test.go",
+      "start_line": 100,
+      "end_line": 125,
+      "signature": "func TestCitedFilesFromFrontmatter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEncodingGridReturnsAllCandidates",
+      "kind": "function",
+      "file": "internal/bench/grid_test.go",
+      "start_line": 8,
+      "end_line": 28,
+      "signature": "func TestRunEncodingGridReturnsAllCandidates(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEncodingGridPicksWinnerUnderCap",
+      "kind": "function",
+      "file": "internal/bench/grid_test.go",
+      "start_line": 30,
+      "end_line": 49,
+      "signature": "func TestRunEncodingGridPicksWinnerUnderCap(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunEncodingGridSkipsOverCapPipelines",
+      "kind": "function",
+      "file": "internal/bench/grid_test.go",
+      "start_line": 51,
+      "end_line": 69,
+      "signature": "func TestRunEncodingGridSkipsOverCapPipelines(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMarkdownEncodingGridIncludesWinner",
+      "kind": "function",
+      "file": "internal/bench/grid_test.go",
+      "start_line": 71,
+      "end_line": 91,
+      "signature": "func TestMarkdownEncodingGridIncludesWinner(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMarkdownEncodingGridNoWinner",
+      "kind": "function",
+      "file": "internal/bench/grid_test.go",
+      "start_line": 93,
+      "end_line": 99,
+      "signature": "func TestMarkdownEncodingGridNoWinner(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "LLMReport",
+      "kind": "type",
+      "file": "internal/bench/llm.go",
+      "start_line": 19,
+      "end_line": 26,
+      "signature": "type LLMReport struct{...}",
+      "doc": "LLMReport is the output of an LLM-driven bench: per-question, per-mode\nanswers + token usage from the API response itself (not estimates).",
+      "language": "go"
+    },
+    {
+      "name": "LLMRow",
+      "kind": "type",
+      "file": "internal/bench/llm.go",
+      "start_line": 29,
+      "end_line": 33,
+      "signature": "type LLMRow struct{...}",
+      "doc": "LLMRow holds the wiki-mode and raw-mode answers for one question.",
+      "language": "go"
+    },
+    {
+      "name": "LLMAnswer",
+      "kind": "type",
+      "file": "internal/bench/llm.go",
+      "start_line": 36,
+      "end_line": 43,
+      "signature": "type LLMAnswer struct{...}",
+      "doc": "LLMAnswer is a single recorded API response.",
+      "language": "go"
+    },
+    {
+      "name": "LLMAggregate",
+      "kind": "type",
+      "file": "internal/bench/llm.go",
+      "start_line": 47,
+      "end_line": 51,
+      "signature": "type LLMAggregate struct{...}",
+      "doc": "LLMAggregate sums input + output tokens + wall across all questions for\none mode.",
+      "language": "go"
+    },
+    {
+      "name": "RunLLM",
+      "kind": "function",
+      "file": "internal/bench/llm.go",
+      "start_line": 59,
+      "end_line": 100,
+      "signature": "func RunLLM(ctx context.Context, cfg config.KeebaConfig, eval llm.Evaluator, qs []Question, rawPaths []string, topK int, maxRawChars int) (LLMReport, error)",
+      "doc": "RunLLM runs the bench through a real LLM evaluator. Returns a typed\nreport; the caller decides whether to write markdown.\n\nrawPaths are the directories the raw-mode prompt reads from. Their\nconcatenated contents are truncated to maxRawChars to keep request\npayloads under most providers' input limits.",
+      "language": "go"
+    },
+    {
+      "name": "RatioInputTokens",
+      "kind": "method",
+      "file": "internal/bench/llm.go",
+      "start_line": 103,
+      "end_line": 108,
+      "signature": "func (LLMReport) RatioInputTokens() float64",
+      "doc": "RatioInputTokens returns wiki/raw input-token ratio (smaller = wiki saves more).",
+      "receiver": "LLMReport",
+      "language": "go"
+    },
+    {
+      "name": "RatioWall",
+      "kind": "method",
+      "file": "internal/bench/llm.go",
+      "start_line": 111,
+      "end_line": 116,
+      "signature": "func (LLMReport) RatioWall() float64",
+      "doc": "RatioWall returns wiki/raw wall ratio.",
+      "receiver": "LLMReport",
+      "language": "go"
+    },
+    {
+      "name": "AvgWikiConfidence",
+      "kind": "method",
+      "file": "internal/bench/llm.go",
+      "start_line": 120,
+      "end_line": 122,
+      "signature": "func (LLMReport) AvgWikiConfidence() float64",
+      "doc": "AvgWikiConfidence returns the mean self-rated confidence across wiki-mode\nanswers (1-5; 0s are skipped from the average).",
+      "receiver": "LLMReport",
+      "language": "go"
+    },
+    {
+      "name": "AvgRawConfidence",
+      "kind": "method",
+      "file": "internal/bench/llm.go",
+      "start_line": 125,
+      "end_line": 127,
+      "signature": "func (LLMReport) AvgRawConfidence() float64",
+      "doc": "AvgRawConfidence returns the mean confidence across raw-mode answers.",
+      "receiver": "LLMReport",
+      "language": "go"
+    },
+    {
+      "name": "ask",
+      "kind": "function",
+      "file": "internal/bench/llm.go",
+      "start_line": 129,
+      "end_line": 142,
+      "signature": "func ask(ctx context.Context, eval llm.Evaluator, question, contextBlob string) (LLMAnswer, error)",
+      "language": "go"
+    },
+    {
+      "name": "buildWikiBlob",
+      "kind": "function",
+      "file": "internal/bench/llm.go",
+      "start_line": 144,
+      "end_line": 154,
+      "signature": "func buildWikiBlob(idx *search.Index, q string, k int) string",
+      "language": "go"
+    },
+    {
+      "name": "buildRawBlob",
+      "kind": "function",
+      "file": "internal/bench/llm.go",
+      "start_line": 156,
+      "end_line": 197,
+      "signature": "func buildRawBlob(cfg config.KeebaConfig, rawPaths []string, maxChars int) string",
+      "language": "go"
+    },
+    {
+      "name": "extractConf",
+      "kind": "function",
+      "file": "internal/bench/llm.go",
+      "start_line": 199,
+      "end_line": 211,
+      "signature": "func extractConf(rows []LLMRow, wikiSide bool) []int",
+      "language": "go"
+    },
+    {
+      "name": "avgConfidence",
+      "kind": "function",
+      "file": "internal/bench/llm.go",
+      "start_line": 213,
+      "end_line": 222,
+      "signature": "func avgConfidence(xs []int) float64",
+      "language": "go"
+    },
+    {
+      "name": "MarkdownLLM",
+      "kind": "function",
+      "file": "internal/bench/llm_format.go",
+      "start_line": 10,
+      "end_line": 64,
+      "signature": "func MarkdownLLM(r LLMReport) string",
+      "doc": "MarkdownLLM renders an LLMReport as a stable markdown document for\ncommitting to wiki/_bench/\u003cdate\u003e-llm.md.",
+      "language": "go"
+    },
+    {
+      "name": "indentQuote",
+      "kind": "function",
+      "file": "internal/bench/llm_format.go",
+      "start_line": 66,
+      "end_line": 68,
+      "signature": "func indentQuote(s string) string",
+      "language": "go"
+    },
+    {
+      "name": "fakeEval",
+      "kind": "type",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 17,
+      "end_line": 21,
+      "signature": "type fakeEval struct{...}",
+      "doc": "fakeEval is a deterministic Evaluator used by tests.",
+      "language": "go"
+    },
+    {
+      "name": "Provider",
+      "kind": "method",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 23,
+      "end_line": 23,
+      "signature": "func (*fakeEval) Provider() string",
+      "receiver": "fakeEval",
+      "language": "go"
+    },
+    {
+      "name": "Model",
+      "kind": "method",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 24,
+      "end_line": 24,
+      "signature": "func (*fakeEval) Model() string",
+      "receiver": "fakeEval",
+      "language": "go"
+    },
+    {
+      "name": "Answer",
+      "kind": "method",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 26,
+      "end_line": 41,
+      "signature": "func (*fakeEval) Answer(_ context.Context, q, ctxBlob string) (llm.Answer, error)",
+      "receiver": "fakeEval",
+      "language": "go"
+    },
+    {
+      "name": "writeFileLLM",
+      "kind": "function",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 43,
+      "end_line": 51,
+      "signature": "func writeFileLLM(t *testing.T, p, body string)",
+      "language": "go"
+    },
+    {
+      "name": "corpusForLLM",
+      "kind": "function",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 53,
+      "end_line": 61,
+      "signature": "func corpusForLLM(t *testing.T) config.KeebaConfig",
+      "language": "go"
+    },
+    {
+      "name": "TestRunLLMTracksUsage",
+      "kind": "function",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 63,
+      "end_line": 84,
+      "signature": "func TestRunLLMTracksUsage(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunLLMSurfacesError",
+      "kind": "function",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 86,
+      "end_line": 94,
+      "signature": "func TestRunLLMSurfacesError(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "errEval",
+      "kind": "type",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 96,
+      "end_line": 96,
+      "signature": "type errEval struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Provider",
+      "kind": "method",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 98,
+      "end_line": 98,
+      "signature": "func (*errEval) Provider() string",
+      "receiver": "errEval",
+      "language": "go"
+    },
+    {
+      "name": "Model",
+      "kind": "method",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 99,
+      "end_line": 99,
+      "signature": "func (*errEval) Model() string",
+      "receiver": "errEval",
+      "language": "go"
+    },
+    {
+      "name": "Answer",
+      "kind": "method",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 100,
+      "end_line": 102,
+      "signature": "func (*errEval) Answer(_ context.Context, _, _ string) (llm.Answer, error)",
+      "receiver": "errEval",
+      "language": "go"
+    },
+    {
+      "name": "TestMarkdownLLMShape",
+      "kind": "function",
+      "file": "internal/bench/llm_test.go",
+      "start_line": 104,
+      "end_line": 122,
+      "signature": "func TestMarkdownLLMShape(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "newBenchCmd",
+      "kind": "function",
+      "file": "internal/cli/bench.go",
+      "start_line": 17,
+      "end_line": 168,
+      "signature": "func newBenchCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "pipelineSpec",
+      "kind": "function",
+      "file": "internal/cli/bench.go",
+      "start_line": 173,
+      "end_line": 182,
+      "signature": "func pipelineSpec(rep bench.TypedGridReport, pt bench.PageType) string",
+      "doc": "pipelineSpec returns the recommended pipeline name for the given\npage-type from a TypedGridReport, or \"\" if the type isn't present or\nhas no winner under the quality cap.",
+      "language": "go"
+    },
+    {
+      "name": "runLLMBench",
+      "kind": "function",
+      "file": "internal/cli/bench.go",
+      "start_line": 184,
+      "end_line": 227,
+      "signature": "func runLLMBench(cmd *cobra.Command, cfg config.KeebaConfig, qs []bench.Question, rawPaths []string, topK int, maxRawChars int, out string, provider string) error",
+      "language": "go"
+    },
+    {
+      "name": "writeBench",
+      "kind": "function",
+      "file": "internal/cli/bench.go",
+      "start_line": 229,
+      "end_line": 234,
+      "signature": "func writeBench(path string, data []byte) error",
+      "language": "go"
+    },
+    {
+      "name": "readQuestions",
+      "kind": "function",
+      "file": "internal/cli/bench.go",
+      "start_line": 236,
+      "end_line": 255,
+      "signature": "func readQuestions(path string) ([]bench.Question, error)",
+      "language": "go"
+    },
+    {
+      "name": "safeInverse",
+      "kind": "function",
+      "file": "internal/cli/bench.go",
+      "start_line": 257,
+      "end_line": 262,
+      "signature": "func safeInverse(r float64) float64",
+      "language": "go"
+    },
+    {
+      "name": "newCompileCmd",
+      "kind": "function",
+      "file": "internal/cli/compile.go",
+      "start_line": 13,
+      "end_line": 83,
+      "signature": "func newCompileCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "newDriftCmd",
+      "kind": "function",
+      "file": "internal/cli/drift.go",
+      "start_line": 13,
+      "end_line": 46,
+      "signature": "func newDriftCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "driftTargets",
+      "kind": "function",
+      "file": "internal/cli/drift.go",
+      "start_line": 48,
+      "end_line": 53,
+      "signature": "func driftTargets(cfg config.KeebaConfig, singleFile string) ([]string, error)",
+      "language": "go"
+    },
+    {
+      "name": "newIndexCmd",
+      "kind": "function",
+      "file": "internal/cli/index.go",
+      "start_line": 13,
+      "end_line": 38,
+      "signature": "func newIndexCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "newIngestCmd",
+      "kind": "function",
+      "file": "internal/cli/ingest.go",
+      "start_line": 29,
+      "end_line": 110,
+      "signature": "func newIngestCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "runGitIngest",
+      "kind": "function",
+      "file": "internal/cli/ingest.go",
+      "start_line": 112,
+      "end_line": 145,
+      "signature": "func runGitIngest(cmd *cobra.Command, repo, since string, dryRun bool) error",
+      "language": "go"
+    },
+    {
+      "name": "runGitHubIngest",
+      "kind": "function",
+      "file": "internal/cli/ingest_github.go",
+      "start_line": 17,
+      "end_line": 59,
+      "signature": "func runGitHubIngest(cmd *cobra.Command, repoFlag, since string, limit int, dryRun bool) error",
+      "doc": "runGitHubIngest is the github branch of `keeba ingest`.",
+      "language": "go"
+    },
+    {
+      "name": "resolveGitHubRepo",
+      "kind": "function",
+      "file": "internal/cli/ingest_github.go",
+      "start_line": 69,
+      "end_line": 100,
+      "signature": "func resolveGitHubRepo(cmd *cobra.Command, fromConfig, fromFlag string) (string, string, error)",
+      "doc": "resolveGitHubRepo finds the right OWNER/NAME, in priority order:\n\n 1. --github-repo flag (CLI override, never persisted).\n 2. ingest.github.repo from keeba.config.yaml (persisted choice).\n 3. Interactive prompt; the answer is persisted by the caller.\n\nThe \"source\" return is one of \"flag\" / \"config\" / \"prompt\" so the caller\nknows whether to save the answer.",
+      "language": "go"
+    },
+    {
+      "name": "validRepoFormat",
+      "kind": "function",
+      "file": "internal/cli/ingest_github.go",
+      "start_line": 104,
+      "end_line": 106,
+      "signature": "func validRepoFormat(s string) bool",
+      "language": "go"
+    },
+    {
+      "name": "suggestGitHubRepoFromOrigin",
+      "kind": "function",
+      "file": "internal/cli/ingest_github.go",
+      "start_line": 111,
+      "end_line": 129,
+      "signature": "func suggestGitHubRepoFromOrigin() string",
+      "doc": "suggestGitHubRepoFromOrigin returns OWNER/NAME parsed from the cwd's\ngit origin remote, or \"\" if that's not a recognized GitHub URL. Never\nfatal — purely a UX hint for the prompt default.",
+      "language": "go"
+    },
+    {
+      "name": "TestValidRepoFormat",
+      "kind": "function",
+      "file": "internal/cli/ingest_github_test.go",
+      "start_line": 5,
+      "end_line": 28,
+      "signature": "func TestValidRepoFormat(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "newInitCmd",
+      "kind": "function",
+      "file": "internal/cli/init.go",
+      "start_line": 14,
+      "end_line": 71,
+      "signature": "func newInitCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "newLintCmd",
+      "kind": "function",
+      "file": "internal/cli/lint.go",
+      "start_line": 13,
+      "end_line": 48,
+      "signature": "func newLintCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "loadCfg",
+      "kind": "function",
+      "file": "internal/cli/lint.go",
+      "start_line": 50,
+      "end_line": 53,
+      "signature": "func loadCfg(cmd *cobra.Command) (config.KeebaConfig, error)",
+      "language": "go"
+    },
+    {
+      "name": "pickTargets",
+      "kind": "function",
+      "file": "internal/cli/lint.go",
+      "start_line": 55,
+      "end_line": 64,
+      "signature": "func pickTargets(cfg config.KeebaConfig, staged bool, singleFile string) ([]string, error)",
+      "language": "go"
+    },
+    {
+      "name": "printResult",
+      "kind": "function",
+      "file": "internal/cli/lint.go",
+      "start_line": 66,
+      "end_line": 81,
+      "signature": "func printResult(cmd *cobra.Command, cfg config.KeebaConfig, r lint.RunResult, format string, warningsAsErrors bool) error",
+      "language": "go"
+    },
+    {
+      "name": "newMCPCmd",
+      "kind": "function",
+      "file": "internal/cli/mcp.go",
+      "start_line": 11,
+      "end_line": 34,
+      "signature": "func newMCPCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "newMCPInstallCmd",
+      "kind": "function",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 21,
+      "end_line": 74,
+      "signature": "func newMCPInstallCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "installClaudeCode",
+      "kind": "function",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 76,
+      "end_line": 105,
+      "signature": "func installClaudeCode(cmd *cobra.Command, wikiRoot, scope string) error",
+      "language": "go"
+    },
+    {
+      "name": "claudeMCPHasKeeba",
+      "kind": "function",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 110,
+      "end_line": 126,
+      "signature": "func claudeMCPHasKeeba(bin, _ string) bool",
+      "doc": "claudeMCPHasKeeba returns true when `claude mcp list` already includes a\nserver named \"keeba\" — covering both user-scope and project-scope configs.\nConservatively returns false on any error so we still attempt the add.",
+      "language": "go"
+    },
+    {
+      "name": "cursorConfig",
+      "kind": "type",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 128,
+      "end_line": 130,
+      "signature": "type cursorConfig struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "cursorServer",
+      "kind": "type",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 132,
+      "end_line": 135,
+      "signature": "type cursorServer struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "installCursor",
+      "kind": "function",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 137,
+      "end_line": 176,
+      "signature": "func installCursor(cmd *cobra.Command, wikiRoot, scope string) error",
+      "language": "go"
+    },
+    {
+      "name": "cursorTarget",
+      "kind": "function",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 178,
+      "end_line": 187,
+      "signature": "func cursorTarget(wikiRoot, scope string) (string, error)",
+      "language": "go"
+    },
+    {
+      "name": "installCodex",
+      "kind": "function",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 189,
+      "end_line": 241,
+      "signature": "func installCodex(cmd *cobra.Command, wikiRoot string) error",
+      "language": "go"
+    },
+    {
+      "name": "containsKeebaCodex",
+      "kind": "function",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 243,
+      "end_line": 250,
+      "signature": "func containsKeebaCodex(toml string) bool",
+      "language": "go"
+    },
+    {
+      "name": "endsWithNewline",
+      "kind": "function",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 252,
+      "end_line": 254,
+      "signature": "func endsWithNewline(s string) bool",
+      "language": "go"
+    },
+    {
+      "name": "stringSplit",
+      "kind": "function",
+      "file": "internal/cli/mcp_install.go",
+      "start_line": 257,
+      "end_line": 268,
+      "signature": "func stringSplit(s, sep string) []string",
+      "doc": "stringSplit avoids importing strings just for one helper in this file.",
+      "language": "go"
+    },
+    {
+      "name": "newMetaCmd",
+      "kind": "function",
+      "file": "internal/cli/meta.go",
+      "start_line": 13,
+      "end_line": 62,
+      "signature": "func newMetaCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "Version",
+      "kind": "const",
+      "file": "internal/cli/root.go",
+      "start_line": 9,
+      "end_line": 9,
+      "signature": "const Version",
+      "doc": "Version is the CLI's user-facing version string.",
+      "language": "go"
+    },
+    {
+      "name": "NewRoot",
+      "kind": "function",
+      "file": "internal/cli/root.go",
+      "start_line": 13,
+      "end_line": 39,
+      "signature": "func NewRoot() *cobra.Command",
+      "doc": "NewRoot returns a freshly-built root command. Each call yields an\nindependent tree, which keeps test cases isolated.",
+      "language": "go"
+    },
+    {
+      "name": "TestVersionFlag",
+      "kind": "function",
+      "file": "internal/cli/root_test.go",
+      "start_line": 9,
+      "end_line": 22,
+      "signature": "func TestVersionFlag(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestHelpListsAllSubcommands",
+      "kind": "function",
+      "file": "internal/cli/root_test.go",
+      "start_line": 24,
+      "end_line": 39,
+      "signature": "func TestHelpListsAllSubcommands(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSilentExitSentinel",
+      "kind": "function",
+      "file": "internal/cli/root_test.go",
+      "start_line": 41,
+      "end_line": 48,
+      "signature": "func TestSilentExitSentinel(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "newSearchCmd",
+      "kind": "function",
+      "file": "internal/cli/search.go",
+      "start_line": 13,
+      "end_line": 68,
+      "signature": "func newSearchCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "silentExit",
+      "kind": "type",
+      "file": "internal/cli/sentinels.go",
+      "start_line": 6,
+      "end_line": 6,
+      "signature": "type silentExit struct{...}",
+      "doc": "silentExit is returned by commands that have already printed a summary\nand just want a non-zero exit code without main() echoing the error\nstring.",
+      "language": "go"
+    },
+    {
+      "name": "Error",
+      "kind": "method",
+      "file": "internal/cli/sentinels.go",
+      "start_line": 8,
+      "end_line": 8,
+      "signature": "func (silentExit) Error() string",
+      "receiver": "silentExit",
+      "language": "go"
+    },
+    {
+      "name": "IsSilentExit",
+      "kind": "function",
+      "file": "internal/cli/sentinels.go",
+      "start_line": 11,
+      "end_line": 14,
+      "signature": "func IsSilentExit(err error) bool",
+      "doc": "IsSilentExit reports whether err is the silent-exit sentinel.",
+      "language": "go"
+    },
+    {
+      "name": "newSyncCmd",
+      "kind": "function",
+      "file": "internal/cli/sync.go",
+      "start_line": 12,
+      "end_line": 65,
+      "signature": "func newSyncCmd() *cobra.Command",
+      "language": "go"
+    },
+    {
+      "name": "LintConfig",
+      "kind": "type",
+      "file": "internal/config/config.go",
+      "start_line": 14,
+      "end_line": 20,
+      "signature": "type LintConfig struct{...}",
+      "doc": "LintConfig governs the schema-lint rules.",
+      "language": "go"
+    },
+    {
+      "name": "DriftConfig",
+      "kind": "type",
+      "file": "internal/config/config.go",
+      "start_line": 23,
+      "end_line": 27,
+      "signature": "type DriftConfig struct{...}",
+      "doc": "DriftConfig governs citation-drift detection.",
+      "language": "go"
+    },
+    {
+      "name": "IngestConfig",
+      "kind": "type",
+      "file": "internal/config/config.go",
+      "start_line": 31,
+      "end_line": 33,
+      "signature": "type IngestConfig struct{...}",
+      "doc": "IngestConfig caches per-source settings users would otherwise have to\npass on every CLI invocation (notably which GitHub repo to ingest from).",
+      "language": "go"
+    },
+    {
+      "name": "EncodingConfig",
+      "kind": "type",
+      "file": "internal/config/config.go",
+      "start_line": 45,
+      "end_line": 49,
+      "signature": "type EncodingConfig struct{...}",
+      "doc": "EncodingConfig holds per-page-type encoding pipeline specs. `keeba bench\n--encoding-grid-by-type --write-config` populates these; `keeba ingest`\nand `keeba sync` consume them at write time. Empty means \"no encoding\nfor that page type\" — the page is written as raw markdown.\n\nPage types map 1-to-1 with bench.PageType:\n\n\tfunction  — function/class definition pages (cited code files)\n\tentity    — fact-heavy entity pages (bullet-list of properties)\n\tnarrative — flowing prose (default for anything else)",
+      "language": "go"
+    },
+    {
+      "name": "PipelineForType",
+      "kind": "method",
+      "file": "internal/config/config.go",
+      "start_line": 53,
+      "end_line": 63,
+      "signature": "func (EncodingConfig) PipelineForType(pageType string) string",
+      "doc": "PipelineForType returns the configured pipeline spec for the named\npage-type (\"function\", \"entity\", \"narrative\"), or \"\" if none configured.",
+      "receiver": "EncodingConfig",
+      "language": "go"
+    },
+    {
+      "name": "IngestGitHubConfig",
+      "kind": "type",
+      "file": "internal/config/config.go",
+      "start_line": 66,
+      "end_line": 70,
+      "signature": "type IngestGitHubConfig struct{...}",
+      "doc": "IngestGitHubConfig holds GitHub-specific ingest defaults.",
+      "language": "go"
+    },
+    {
+      "name": "KeebaConfig",
+      "kind": "type",
+      "file": "internal/config/config.go",
+      "start_line": 73,
+      "end_line": 89,
+      "signature": "type KeebaConfig struct{...}",
+      "doc": "KeebaConfig is the resolved configuration plus the wiki root path.",
+      "language": "go"
+    },
+    {
+      "name": "Defaults",
+      "kind": "function",
+      "file": "internal/config/config.go",
+      "start_line": 93,
+      "end_line": 110,
+      "signature": "func Defaults() KeebaConfig",
+      "doc": "Defaults returns a KeebaConfig populated with sensible defaults. Callers\nshould overwrite WikiRoot before use.",
+      "language": "go"
+    },
+    {
+      "name": "FindWikiRoot",
+      "kind": "function",
+      "file": "internal/config/config.go",
+      "start_line": 115,
+      "end_line": 138,
+      "signature": "func FindWikiRoot(start string) string",
+      "doc": "FindWikiRoot walks up from start looking for a directory containing\nkeeba.config.yaml. Returns the absolute directory path on hit, or an empty\nstring if the walk reaches the filesystem root without finding one.",
+      "language": "go"
+    },
+    {
+      "name": "Load",
+      "kind": "function",
+      "file": "internal/config/config.go",
+      "start_line": 144,
+      "end_line": 184,
+      "signature": "func Load(wikiRoot string) (KeebaConfig, error)",
+      "doc": "Load returns the resolved configuration for the given wiki root. If\nwikiRoot is empty, the function walks up from the current working\ndirectory looking for keeba.config.yaml; if none is found, defaults are\nreturned with WikiRoot set to the cwd.",
+      "language": "go"
+    },
+    {
+      "name": "merge",
+      "kind": "function",
+      "file": "internal/config/config.go",
+      "start_line": 186,
+      "end_line": 232,
+      "signature": "func merge(dst *KeebaConfig, src KeebaConfig)",
+      "language": "go"
+    },
+    {
+      "name": "SaveEncoding",
+      "kind": "method",
+      "file": "internal/config/config.go",
+      "start_line": 238,
+      "end_line": 258,
+      "signature": "func (KeebaConfig) SaveEncoding(enc EncodingConfig) error",
+      "doc": "SaveEncoding persists per-page-type encoding pipeline specs into\nkeeba.config.yaml at the wiki root. Empty values clear the field.\nOperates on a yaml.Node tree so unknown / future fields the user has\nin their config are preserved.",
+      "receiver": "KeebaConfig",
+      "language": "go"
+    },
+    {
+      "name": "SaveGitHubRepo",
+      "kind": "method",
+      "file": "internal/config/config.go",
+      "start_line": 264,
+      "end_line": 283,
+      "signature": "func (KeebaConfig) SaveGitHubRepo(repo string) error",
+      "doc": "SaveGitHubRepo persists ingest.github.repo into keeba.config.yaml at the\nwiki root. Operates on a yaml.Node tree so unknown / future fields the\nuser has in their config are preserved (round-tripping through the\nKeebaConfig struct would drop them).",
+      "receiver": "KeebaConfig",
+      "language": "go"
+    },
+    {
+      "name": "loadYAMLDoc",
+      "kind": "function",
+      "file": "internal/config/config.go",
+      "start_line": 289,
+      "end_line": 305,
+      "signature": "func loadYAMLDoc(target string) (*yaml.Node, error)",
+      "doc": "loadYAMLDoc reads target and returns the top-level yaml.Node tree, or a\nfresh empty mapping document if the file is missing/empty. Used by\nSaveEncoding / SaveGitHubRepo to round-trip through the AST so user\nfields the struct doesn't know about survive round-trips.",
+      "language": "go"
+    },
+    {
+      "name": "setOrClearScalar",
+      "kind": "function",
+      "file": "internal/config/config.go",
+      "start_line": 310,
+      "end_line": 322,
+      "signature": "func setOrClearScalar(parent *yaml.Node, key, value string)",
+      "doc": "setOrClearScalar sets parent[key] to a scalar value, or removes the key\nif value is empty. Lets SaveEncoding leave unset page-types absent from\nthe config rather than emitting empty strings.",
+      "language": "go"
+    },
+    {
+      "name": "docMap",
+      "kind": "function",
+      "file": "internal/config/config.go",
+      "start_line": 326,
+      "end_line": 334,
+      "signature": "func docMap(root *yaml.Node) *yaml.Node",
+      "doc": "docMap returns the top-level mapping node for either a DocumentNode or a\nbare MappingNode. nil if neither.",
+      "language": "go"
+    },
+    {
+      "name": "ensureMapping",
+      "kind": "function",
+      "file": "internal/config/config.go",
+      "start_line": 338,
+      "end_line": 356,
+      "signature": "func ensureMapping(parent *yaml.Node, key string) *yaml.Node",
+      "doc": "ensureMapping returns the mapping value for key under parent, creating\nit if missing.",
+      "language": "go"
+    },
+    {
+      "name": "setScalar",
+      "kind": "function",
+      "file": "internal/config/config.go",
+      "start_line": 360,
+      "end_line": 374,
+      "signature": "func setScalar(parent *yaml.Node, key, value string)",
+      "doc": "setScalar sets parent[key] to a string scalar, replacing any existing\nvalue at that key.",
+      "language": "go"
+    },
+    {
+      "name": "GigarepoRoot",
+      "kind": "method",
+      "file": "internal/config/config.go",
+      "start_line": 378,
+      "end_line": 383,
+      "signature": "func (KeebaConfig) GigarepoRoot() string",
+      "doc": "GigarepoRoot returns the absolute path to the directory citation paths are\nresolved against.",
+      "receiver": "KeebaConfig",
+      "language": "go"
+    },
+    {
+      "name": "writeFile",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 10,
+      "end_line": 18,
+      "signature": "func writeFile(t *testing.T, path, contents string)",
+      "language": "go"
+    },
+    {
+      "name": "TestDefaultsHaveSaneValues",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 20,
+      "end_line": 34,
+      "signature": "func TestDefaultsHaveSaneValues(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestLoadNoFileFallsBackToDefaults",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 36,
+      "end_line": 51,
+      "signature": "func TestLoadNoFileFallsBackToDefaults(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestLoadOverridesDefaults",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 53,
+      "end_line": 85,
+      "signature": "func TestLoadOverridesDefaults(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestLoadKeepsDefaultsForUnsetSections",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 87,
+      "end_line": 105,
+      "signature": "func TestLoadKeepsDefaultsForUnsetSections(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestFindWikiRootWalksUp",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 107,
+      "end_line": 120,
+      "signature": "func TestFindWikiRootWalksUp(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestFindWikiRootMissReturnsEmpty",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 122,
+      "end_line": 127,
+      "signature": "func TestFindWikiRootMissReturnsEmpty(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestLoadInvalidYAMLReturnsError",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 129,
+      "end_line": 136,
+      "signature": "func TestLoadInvalidYAMLReturnsError(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestEncodingPipelineForType",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 138,
+      "end_line": 158,
+      "signature": "func TestEncodingPipelineForType(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestLoadEncodingFromYAML",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 160,
+      "end_line": 181,
+      "signature": "func TestLoadEncodingFromYAML(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSaveEncodingRoundTripsExistingFields",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 183,
+      "end_line": 227,
+      "signature": "func TestSaveEncodingRoundTripsExistingFields(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSaveEncodingClearsRemovedFields",
+      "kind": "function",
+      "file": "internal/config/config_test.go",
+      "start_line": 229,
+      "end_line": 258,
+      "signature": "func TestSaveEncodingClearsRemovedFields(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Embedder",
+      "kind": "interface",
+      "file": "internal/embed/embed.go",
+      "start_line": 21,
+      "end_line": 29,
+      "signature": "type Embedder interface{...}",
+      "doc": "Embedder turns a batch of text chunks into row-aligned vectors. Returning\nvectors of inconsistent dimension is a programming error.",
+      "language": "go"
+    },
+    {
+      "name": "ErrLocalNotImplemented",
+      "kind": "var",
+      "file": "internal/embed/embed.go",
+      "start_line": 33,
+      "end_line": 35,
+      "signature": "var ErrLocalNotImplemented",
+      "doc": "ErrLocalNotImplemented is returned by NewLocal until cybertron + ONNX\nMiniLM lands in v0.3.",
+      "language": "go"
+    },
+    {
+      "name": "NewFromEnv",
+      "kind": "function",
+      "file": "internal/embed/embed.go",
+      "start_line": 40,
+      "end_line": 55,
+      "signature": "func NewFromEnv() (Embedder, error)",
+      "doc": "NewFromEnv selects an Embedder based on KEEBA_EMBED_PROVIDER. Recognised\nvalues: voyage, openai, local. Returns (nil, error) if the chosen\nprovider can't be constructed (missing API key, etc).",
+      "language": "go"
+    },
+    {
+      "name": "fakeEmb",
+      "kind": "type",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 14,
+      "end_line": 16,
+      "signature": "type fakeEmb struct{...}",
+      "doc": "fakeEmb is a deterministic Embedder for store tests.",
+      "language": "go"
+    },
+    {
+      "name": "Provider",
+      "kind": "method",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 18,
+      "end_line": 18,
+      "signature": "func (*fakeEmb) Provider() string",
+      "receiver": "fakeEmb",
+      "language": "go"
+    },
+    {
+      "name": "Model",
+      "kind": "method",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 19,
+      "end_line": 19,
+      "signature": "func (*fakeEmb) Model() string",
+      "receiver": "fakeEmb",
+      "language": "go"
+    },
+    {
+      "name": "Dim",
+      "kind": "method",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 20,
+      "end_line": 20,
+      "signature": "func (*fakeEmb) Dim() int",
+      "receiver": "fakeEmb",
+      "language": "go"
+    },
+    {
+      "name": "Embed",
+      "kind": "method",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 21,
+      "end_line": 32,
+      "signature": "func (*fakeEmb) Embed(_ context.Context, chunks []string) ([][]float32, error)",
+      "receiver": "fakeEmb",
+      "language": "go"
+    },
+    {
+      "name": "TestBuildAndSearch",
+      "kind": "function",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 34,
+      "end_line": 66,
+      "signature": "func TestBuildAndSearch(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSaveLoadRoundTrip",
+      "kind": "function",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 68,
+      "end_line": 86,
+      "signature": "func TestSaveLoadRoundTrip(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSearchEmptyStore",
+      "kind": "function",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 88,
+      "end_line": 93,
+      "signature": "func TestSearchEmptyStore(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSearchZeroQuery",
+      "kind": "function",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 95,
+      "end_line": 102,
+      "signature": "func TestSearchZeroQuery(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestVoyageHTTPRoundTrip",
+      "kind": "function",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 104,
+      "end_line": 131,
+      "signature": "func TestVoyageHTTPRoundTrip(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestOpenAIHTTPRoundTrip",
+      "kind": "function",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 133,
+      "end_line": 153,
+      "signature": "func TestOpenAIHTTPRoundTrip(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestNewFromEnvLocalDeferred",
+      "kind": "function",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 155,
+      "end_line": 161,
+      "signature": "func TestNewFromEnvLocalDeferred(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestNewFromEnvUnknownProvider",
+      "kind": "function",
+      "file": "internal/embed/embed_test.go",
+      "start_line": 163,
+      "end_line": 169,
+      "signature": "func TestNewFromEnvUnknownProvider(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "OpenAI",
+      "kind": "type",
+      "file": "internal/embed/openai.go",
+      "start_line": 15,
+      "end_line": 22,
+      "signature": "type OpenAI struct{...}",
+      "doc": "OpenAI embeds chunks via OpenAI's embeddings API.",
+      "language": "go"
+    },
+    {
+      "name": "NewOpenAI",
+      "kind": "function",
+      "file": "internal/embed/openai.go",
+      "start_line": 26,
+      "end_line": 44,
+      "signature": "func NewOpenAI() (*OpenAI, error)",
+      "doc": "NewOpenAI builds an OpenAI embedder from environment variables. Returns\n(nil, error) when OPENAI_API_KEY is unset.",
+      "language": "go"
+    },
+    {
+      "name": "Provider",
+      "kind": "method",
+      "file": "internal/embed/openai.go",
+      "start_line": 47,
+      "end_line": 47,
+      "signature": "func (*OpenAI) Provider() string",
+      "doc": "Provider returns \"openai\".",
+      "receiver": "OpenAI",
+      "language": "go"
+    },
+    {
+      "name": "Model",
+      "kind": "method",
+      "file": "internal/embed/openai.go",
+      "start_line": 50,
+      "end_line": 50,
+      "signature": "func (*OpenAI) Model() string",
+      "doc": "Model returns the configured model identifier.",
+      "receiver": "OpenAI",
+      "language": "go"
+    },
+    {
+      "name": "Dim",
+      "kind": "method",
+      "file": "internal/embed/openai.go",
+      "start_line": 53,
+      "end_line": 53,
+      "signature": "func (*OpenAI) Dim() int",
+      "doc": "Dim returns the dimensionality of emitted vectors.",
+      "receiver": "OpenAI",
+      "language": "go"
+    },
+    {
+      "name": "openaiRequest",
+      "kind": "type",
+      "file": "internal/embed/openai.go",
+      "start_line": 55,
+      "end_line": 58,
+      "signature": "type openaiRequest struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "openaiResponse",
+      "kind": "type",
+      "file": "internal/embed/openai.go",
+      "start_line": 60,
+      "end_line": 64,
+      "signature": "type openaiResponse struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Embed",
+      "kind": "method",
+      "file": "internal/embed/openai.go",
+      "start_line": 67,
+      "end_line": 116,
+      "signature": "func (*OpenAI) Embed(ctx context.Context, chunks []string) ([][]float32, error)",
+      "doc": "Embed batches chunks through the OpenAI API and concatenates results.",
+      "receiver": "OpenAI",
+      "language": "go"
+    },
+    {
+      "name": "Entry",
+      "kind": "type",
+      "file": "internal/embed/store.go",
+      "start_line": 15,
+      "end_line": 21,
+      "signature": "type Entry struct{...}",
+      "doc": "Entry is one indexed chunk: its source page, its raw text, and its\nembedding vector.",
+      "language": "go"
+    },
+    {
+      "name": "Store",
+      "kind": "type",
+      "file": "internal/embed/store.go",
+      "start_line": 26,
+      "end_line": 31,
+      "signature": "type Store struct{...}",
+      "doc": "Store is a flat-file vector index. It's deliberately simple — one gob\nfile per wiki, in-memory cosine search. No sqlite-vec FFI, no external\nservice. v0.3 can swap a real ANN index in behind this same API.",
+      "language": "go"
+    },
+    {
+      "name": "Hit",
+      "kind": "type",
+      "file": "internal/embed/store.go",
+      "start_line": 34,
+      "end_line": 37,
+      "signature": "type Hit struct{...}",
+      "doc": "Hit is a single ranked result.",
+      "language": "go"
+    },
+    {
+      "name": "Build",
+      "kind": "function",
+      "file": "internal/embed/store.go",
+      "start_line": 40,
+      "end_line": 67,
+      "signature": "func Build(ctx context.Context, emb Embedder, entries []Entry) (*Store, error)",
+      "doc": "Build embeds every chunk via emb and assembles a Store.",
+      "language": "go"
+    },
+    {
+      "name": "Search",
+      "kind": "method",
+      "file": "internal/embed/store.go",
+      "start_line": 70,
+      "end_line": 96,
+      "signature": "func (*Store) Search(qVec []float32, k int) []Hit",
+      "doc": "Search returns the top-k entries by cosine similarity to qVec.",
+      "receiver": "Store",
+      "language": "go"
+    },
+    {
+      "name": "Save",
+      "kind": "method",
+      "file": "internal/embed/store.go",
+      "start_line": 99,
+      "end_line": 109,
+      "signature": "func (*Store) Save(path string) error",
+      "doc": "Save writes the store to disk as a gob.",
+      "receiver": "Store",
+      "language": "go"
+    },
+    {
+      "name": "Load",
+      "kind": "function",
+      "file": "internal/embed/store.go",
+      "start_line": 112,
+      "end_line": 123,
+      "signature": "func Load(path string) (*Store, error)",
+      "doc": "Load reads a previously-saved store.",
+      "language": "go"
+    },
+    {
+      "name": "cosine",
+      "kind": "function",
+      "file": "internal/embed/store.go",
+      "start_line": 125,
+      "end_line": 139,
+      "signature": "func cosine(a, b []float32, aNorm float32) float32",
+      "language": "go"
+    },
+    {
+      "name": "norm",
+      "kind": "function",
+      "file": "internal/embed/store.go",
+      "start_line": 141,
+      "end_line": 147,
+      "signature": "func norm(v []float32) float32",
+      "language": "go"
+    },
+    {
+      "name": "Voyage",
+      "kind": "type",
+      "file": "internal/embed/voyage.go",
+      "start_line": 15,
+      "end_line": 22,
+      "signature": "type Voyage struct{...}",
+      "doc": "Voyage embeds chunks via the Voyage AI API.",
+      "language": "go"
+    },
+    {
+      "name": "NewVoyage",
+      "kind": "function",
+      "file": "internal/embed/voyage.go",
+      "start_line": 26,
+      "end_line": 44,
+      "signature": "func NewVoyage() (*Voyage, error)",
+      "doc": "NewVoyage builds a Voyage embedder from environment variables. Returns\n(nil, error) when VOYAGE_API_KEY is unset.",
+      "language": "go"
+    },
+    {
+      "name": "Provider",
+      "kind": "method",
+      "file": "internal/embed/voyage.go",
+      "start_line": 47,
+      "end_line": 47,
+      "signature": "func (*Voyage) Provider() string",
+      "doc": "Provider returns \"voyage\".",
+      "receiver": "Voyage",
+      "language": "go"
+    },
+    {
+      "name": "Model",
+      "kind": "method",
+      "file": "internal/embed/voyage.go",
+      "start_line": 50,
+      "end_line": 50,
+      "signature": "func (*Voyage) Model() string",
+      "doc": "Model returns the configured model identifier.",
+      "receiver": "Voyage",
+      "language": "go"
+    },
+    {
+      "name": "Dim",
+      "kind": "method",
+      "file": "internal/embed/voyage.go",
+      "start_line": 55,
+      "end_line": 55,
+      "signature": "func (*Voyage) Dim() int",
+      "doc": "Dim returns the dimensionality of emitted vectors. Zero before first call\n(Voyage doesn't publish a static dim per model and the caller doesn't need\nit until a search runs against a populated index).",
+      "receiver": "Voyage",
+      "language": "go"
+    },
+    {
+      "name": "voyageRequest",
+      "kind": "type",
+      "file": "internal/embed/voyage.go",
+      "start_line": 57,
+      "end_line": 61,
+      "signature": "type voyageRequest struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "voyageResponse",
+      "kind": "type",
+      "file": "internal/embed/voyage.go",
+      "start_line": 63,
+      "end_line": 67,
+      "signature": "type voyageResponse struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Embed",
+      "kind": "method",
+      "file": "internal/embed/voyage.go",
+      "start_line": 70,
+      "end_line": 119,
+      "signature": "func (*Voyage) Embed(ctx context.Context, chunks []string) ([][]float32, error)",
+      "doc": "Embed batches chunks through the Voyage API and concatenates results.",
+      "receiver": "Voyage",
+      "language": "go"
+    },
+    {
+      "name": "MDCaveman",
+      "kind": "type",
+      "file": "internal/encoding/caveman.go",
+      "start_line": 12,
+      "end_line": 12,
+      "signature": "type MDCaveman struct{...}",
+      "doc": "MDCaveman is the deterministic md-caveman encoder. Drops articles,\nauxiliaries, and common filler tokens; rewrites a small set of\nmulti-word phrases. Stateless. ~25-40% reduction on technical prose\nwith no model dependency.",
+      "language": "go"
+    },
+    {
+      "name": "Name",
+      "kind": "method",
+      "file": "internal/encoding/caveman.go",
+      "start_line": 15,
+      "end_line": 15,
+      "signature": "func (MDCaveman) Name() string",
+      "doc": "Name returns \"md-caveman\".",
+      "receiver": "MDCaveman",
+      "language": "go"
+    },
+    {
+      "name": "cavemanRewrite",
+      "kind": "type",
+      "file": "internal/encoding/caveman.go",
+      "start_line": 45,
+      "end_line": 48,
+      "signature": "type cavemanRewrite struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Encode",
+      "kind": "method",
+      "file": "internal/encoding/caveman.go",
+      "start_line": 68,
+      "end_line": 83,
+      "signature": "func (MDCaveman) Encode(body string) (string, error)",
+      "doc": "Encode applies caveman compression: multi-word rewrites, then\ntoken-level drops, then whitespace + punctuation cleanup.",
+      "receiver": "MDCaveman",
+      "language": "go"
+    },
+    {
+      "name": "TestMDCavemanName",
+      "kind": "function",
+      "file": "internal/encoding/caveman_test.go",
+      "start_line": 5,
+      "end_line": 9,
+      "signature": "func TestMDCavemanName(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMDCavemanEncode",
+      "kind": "function",
+      "file": "internal/encoding/caveman_test.go",
+      "start_line": 11,
+      "end_line": 80,
+      "signature": "func TestMDCavemanEncode(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMDCavemanCompresses",
+      "kind": "function",
+      "file": "internal/encoding/caveman_test.go",
+      "start_line": 82,
+      "end_line": 92,
+      "signature": "func TestMDCavemanCompresses(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "DenseTuple",
+      "kind": "type",
+      "file": "internal/encoding/dense_tuple.go",
+      "start_line": 40,
+      "end_line": 42,
+      "signature": "type DenseTuple struct{...}",
+      "doc": "DenseTuple emits RDF-style (subject, predicate, object) facts about a\ndefinition: name, params, return type, body identifiers. Designed for\nfact-heavy entity pages.\n\nEmpirical (docs/encoding-bench-2026-04-29.md): on function corpora\n(CSN Python) it underperforms structural-card by ~13% MRR — applying\nthe wrong page-type encoder costs quality. Use for entity / fact\npages per plan §10 page-type-aware selector.",
+      "language": "go"
+    },
+    {
+      "name": "Name",
+      "kind": "method",
+      "file": "internal/encoding/dense_tuple.go",
+      "start_line": 45,
+      "end_line": 45,
+      "signature": "func (DenseTuple) Name() string",
+      "doc": "Name returns \"dense-tuple\".",
+      "receiver": "DenseTuple",
+      "language": "go"
+    },
+    {
+      "name": "denseDef",
+      "kind": "type",
+      "file": "internal/encoding/dense_tuple.go",
+      "start_line": 47,
+      "end_line": 51,
+      "signature": "type denseDef struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "extractDef",
+      "kind": "function",
+      "file": "internal/encoding/dense_tuple.go",
+      "start_line": 53,
+      "end_line": 65,
+      "signature": "func extractDef(body string) denseDef",
+      "language": "go"
+    },
+    {
+      "name": "splitParams",
+      "kind": "function",
+      "file": "internal/encoding/dense_tuple.go",
+      "start_line": 67,
+      "end_line": 83,
+      "signature": "func splitParams(raw string) []string",
+      "language": "go"
+    },
+    {
+      "name": "Encode",
+      "kind": "method",
+      "file": "internal/encoding/dense_tuple.go",
+      "start_line": 87,
+      "end_line": 136,
+      "signature": "func (DenseTuple) Encode(body string) (string, error)",
+      "doc": "Encode produces a flat triple-stream like\n\"fname name fname. fname param x. fname returns int. fname uses bar.\".",
+      "receiver": "DenseTuple",
+      "language": "go"
+    },
+    {
+      "name": "TestDenseTupleName",
+      "kind": "function",
+      "file": "internal/encoding/dense_tuple_test.go",
+      "start_line": 8,
+      "end_line": 12,
+      "signature": "func TestDenseTupleName(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDenseTuplePython",
+      "kind": "function",
+      "file": "internal/encoding/dense_tuple_test.go",
+      "start_line": 14,
+      "end_line": 32,
+      "signature": "func TestDenseTuplePython(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDenseTupleGo",
+      "kind": "function",
+      "file": "internal/encoding/dense_tuple_test.go",
+      "start_line": 34,
+      "end_line": 49,
+      "signature": "func TestDenseTupleGo(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDenseTupleJS",
+      "kind": "function",
+      "file": "internal/encoding/dense_tuple_test.go",
+      "start_line": 51,
+      "end_line": 68,
+      "signature": "func TestDenseTupleJS(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDenseTupleSkipsSelf",
+      "kind": "function",
+      "file": "internal/encoding/dense_tuple_test.go",
+      "start_line": 70,
+      "end_line": 84,
+      "signature": "func TestDenseTupleSkipsSelf(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDenseTupleNoDefFallsBack",
+      "kind": "function",
+      "file": "internal/encoding/dense_tuple_test.go",
+      "start_line": 86,
+      "end_line": 96,
+      "signature": "func TestDenseTupleNoDefFallsBack(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDenseTupleStripsParamAnnotation",
+      "kind": "function",
+      "file": "internal/encoding/dense_tuple_test.go",
+      "start_line": 98,
+      "end_line": 112,
+      "signature": "func TestDenseTupleStripsParamAnnotation(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Encoder",
+      "kind": "interface",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 29,
+      "end_line": 35,
+      "signature": "type Encoder interface{...}",
+      "doc": "Encoder is the contract every encoding plugin satisfies. Stateless\nfrom the caller's perspective; safe to call from any goroutine after\nany required Fit(...) has completed.",
+      "language": "go"
+    },
+    {
+      "name": "Fitter",
+      "kind": "interface",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 41,
+      "end_line": 43,
+      "signature": "type Fitter interface{...}",
+      "doc": "Fitter is implemented by stateful encoders that need to scan the\ncorpus once before encoding (e.g. glossary-dedupe builds canonical\nshort codes from frequency analysis). Fit MUST be called before\nEncode for plugins implementing this interface.",
+      "language": "go"
+    },
+    {
+      "name": "Pass",
+      "kind": "type",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 48,
+      "end_line": 48,
+      "signature": "type Pass struct{...}",
+      "doc": "Pass is the no-op encoder (\"encoding: none\" / \"encoding: markdown\").\nUsed as the default until a user opts into a real plugin via\nkeeba.config.yaml.",
+      "language": "go"
+    },
+    {
+      "name": "Name",
+      "kind": "method",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 51,
+      "end_line": 51,
+      "signature": "func (Pass) Name() string",
+      "doc": "Name returns \"none\" — the canonical identifier for the no-op encoder.",
+      "receiver": "Pass",
+      "language": "go"
+    },
+    {
+      "name": "Encode",
+      "kind": "method",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 54,
+      "end_line": 54,
+      "signature": "func (Pass) Encode(body string) (string, error)",
+      "doc": "Encode returns body unchanged.",
+      "receiver": "Pass",
+      "language": "go"
+    },
+    {
+      "name": "Pipeline",
+      "kind": "type",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 58,
+      "end_line": 60,
+      "signature": "type Pipeline struct{...}",
+      "doc": "Pipeline chains encoders left-to-right. A Pipeline IS-A Encoder so\nit can be used wherever a single encoder is expected.",
+      "language": "go"
+    },
+    {
+      "name": "NewPipeline",
+      "kind": "function",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 64,
+      "end_line": 66,
+      "signature": "func NewPipeline(encoders ...Encoder) *Pipeline",
+      "doc": "NewPipeline constructs a Pipeline of the given encoders, applied\nin argument order.",
+      "language": "go"
+    },
+    {
+      "name": "Encoders",
+      "kind": "method",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 70,
+      "end_line": 74,
+      "signature": "func (*Pipeline) Encoders() []Encoder",
+      "doc": "Encoders returns the constituent encoders in order. The returned\nslice is a copy — safe to mutate.",
+      "receiver": "Pipeline",
+      "language": "go"
+    },
+    {
+      "name": "Name",
+      "kind": "method",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 78,
+      "end_line": 87,
+      "signature": "func (*Pipeline) Name() string",
+      "doc": "Name joins constituent encoder names with \"+\", or returns \"raw\"\nfor an empty pipeline.",
+      "receiver": "Pipeline",
+      "language": "go"
+    },
+    {
+      "name": "Encode",
+      "kind": "method",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 91,
+      "end_line": 103,
+      "signature": "func (*Pipeline) Encode(body string) (string, error)",
+      "doc": "Encode runs body through each encoder in order. The first error\nshort-circuits and is wrapped with the failing encoder's name.",
+      "receiver": "Pipeline",
+      "language": "go"
+    },
+    {
+      "name": "Fit",
+      "kind": "method",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 108,
+      "end_line": 142,
+      "signature": "func (*Pipeline) Fit(corpus []string) error",
+      "doc": "Fit calls Fit on any Fitter encoders, threading the encoded output\nthrough to subsequent stateful encoders. Plain (non-Fitter) encoders\nare skipped here — they're applied at Encode time.",
+      "receiver": "Pipeline",
+      "language": "go"
+    },
+    {
+      "name": "BuildPipeline",
+      "kind": "function",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 151,
+      "end_line": 173,
+      "signature": "func BuildPipeline(spec string) (*Pipeline, error)",
+      "doc": "BuildPipeline parses an encoder spec — comma-separated\n(`\"glossary,structural-card\"`, the canonical CLI form) or plus-joined\n(`\"glossary-dedupe+md-caveman\"`, the form Pipeline.Name() produces) —\nand constructs the corresponding Pipeline. Both separators are\naccepted so a spec written by `keeba bench --write-config` round-trips\ncleanly when re-read by `keeba ingest` / `keeba sync`. Empty or \"raw\"\nyields an empty (no-op) pipeline. Unknown encoder names error.",
+      "language": "go"
+    },
+    {
+      "name": "ByName",
+      "kind": "function",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 178,
+      "end_line": 184,
+      "signature": "func ByName(name string) Encoder",
+      "doc": "ByName returns the encoder for an identifier. Returns Pass{} for\nunknown / empty strings so a missing config value never breaks an\nimport. For strict resolution use BuildPipeline.",
+      "language": "go"
+    },
+    {
+      "name": "newByName",
+      "kind": "function",
+      "file": "internal/encoding/encoding.go",
+      "start_line": 186,
+      "end_line": 200,
+      "signature": "func newByName(name string) (Encoder, error)",
+      "language": "go"
+    },
+    {
+      "name": "GlossaryDedupe",
+      "kind": "type",
+      "file": "internal/encoding/glossary.go",
+      "start_line": 29,
+      "end_line": 37,
+      "signature": "type GlossaryDedupe struct{...}",
+      "doc": "GlossaryDedupe scans the corpus for frequent long identifiers and\nrewrites them to short canonical codes (g0, g1, …). Saves bytes both\nin the index AND in agent-context (the glossary preamble loads once\nper session vs repeating long identifiers across N pages).",
+      "language": "go"
+    },
+    {
+      "name": "NewGlossary",
+      "kind": "function",
+      "file": "internal/encoding/glossary.go",
+      "start_line": 41,
+      "end_line": 47,
+      "signature": "func NewGlossary() *GlossaryDedupe",
+      "doc": "NewGlossary returns a GlossaryDedupe with default tuning. Override\nthe exported fields before calling Fit if needed.",
+      "language": "go"
+    },
+    {
+      "name": "Name",
+      "kind": "method",
+      "file": "internal/encoding/glossary.go",
+      "start_line": 50,
+      "end_line": 50,
+      "signature": "func (*GlossaryDedupe) Name() string",
+      "doc": "Name returns \"glossary-dedupe\".",
+      "receiver": "GlossaryDedupe",
+      "language": "go"
+    },
+    {
+      "name": "Glossary",
+      "kind": "method",
+      "file": "internal/encoding/glossary.go",
+      "start_line": 54,
+      "end_line": 62,
+      "signature": "func (*GlossaryDedupe) Glossary() map[string]string",
+      "doc": "Glossary returns a copy of the (token -\u003e code) table. Callers can\nemit it as a session-time preamble for agents.",
+      "receiver": "GlossaryDedupe",
+      "language": "go"
+    },
+    {
+      "name": "glossaryCandidate",
+      "kind": "type",
+      "file": "internal/encoding/glossary.go",
+      "start_line": 64,
+      "end_line": 67,
+      "signature": "type glossaryCandidate struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Fit",
+      "kind": "method",
+      "file": "internal/encoding/glossary.go",
+      "start_line": 72,
+      "end_line": 141,
+      "signature": "func (*GlossaryDedupe) Fit(corpus []string) error",
+      "doc": "Fit scans the corpus, picks the top-N long identifiers by\nfrequency-weighted byte savings, and assigns canonical short codes.\nRe-running Fit replaces the table.",
+      "receiver": "GlossaryDedupe",
+      "language": "go"
+    },
+    {
+      "name": "Encode",
+      "kind": "method",
+      "file": "internal/encoding/glossary.go",
+      "start_line": 146,
+      "end_line": 160,
+      "signature": "func (*GlossaryDedupe) Encode(body string) (string, error)",
+      "doc": "Encode rewrites every glossaried identifier in body to its short code.\nReturns body unchanged if Fit hasn't been called or produced no\nentries (i.e. corpus too small for any identifier to clear MinFreq).",
+      "receiver": "GlossaryDedupe",
+      "language": "go"
+    },
+    {
+      "name": "TestGlossaryName",
+      "kind": "function",
+      "file": "internal/encoding/glossary_test.go",
+      "start_line": 8,
+      "end_line": 12,
+      "signature": "func TestGlossaryName(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestGlossaryEncodeWithoutFitIsNoop",
+      "kind": "function",
+      "file": "internal/encoding/glossary_test.go",
+      "start_line": 14,
+      "end_line": 24,
+      "signature": "func TestGlossaryEncodeWithoutFitIsNoop(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestGlossaryFitAndEncode",
+      "kind": "function",
+      "file": "internal/encoding/glossary_test.go",
+      "start_line": 26,
+      "end_line": 56,
+      "signature": "func TestGlossaryFitAndEncode(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestGlossarySkipsShortIdents",
+      "kind": "function",
+      "file": "internal/encoding/glossary_test.go",
+      "start_line": 58,
+      "end_line": 68,
+      "signature": "func TestGlossarySkipsShortIdents(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestGlossaryRespectsMaxEntries",
+      "kind": "function",
+      "file": "internal/encoding/glossary_test.go",
+      "start_line": 70,
+      "end_line": 88,
+      "signature": "func TestGlossaryRespectsMaxEntries(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestGlossaryReFitReplacesTable",
+      "kind": "function",
+      "file": "internal/encoding/glossary_test.go",
+      "start_line": 90,
+      "end_line": 111,
+      "signature": "func TestGlossaryReFitReplacesTable(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "stringMul",
+      "kind": "function",
+      "file": "internal/encoding/glossary_test.go",
+      "start_line": 113,
+      "end_line": 119,
+      "signature": "func stringMul(s string, n int) string",
+      "language": "go"
+    },
+    {
+      "name": "PageType",
+      "kind": "type",
+      "file": "internal/encoding/page_type.go",
+      "start_line": 13,
+      "end_line": 13,
+      "signature": "type PageType string",
+      "doc": "PageType classifies a wiki page so the bench grid can pick a\npage-type-aware encoding. Plan §10's central idea: structural-card\nwins on function pages, glossary+caveman wins on narrative, dense-tuple\nwins on entity-fact pages — applying the wrong one costs quality.",
+      "language": "go"
+    },
+    {
+      "name": "PageTypeFunction",
+      "kind": "const",
+      "file": "internal/encoding/page_type.go",
+      "start_line": 18,
+      "end_line": 18,
+      "signature": "const PageTypeFunction PageType",
+      "language": "go"
+    },
+    {
+      "name": "PageTypeEntity",
+      "kind": "const",
+      "file": "internal/encoding/page_type.go",
+      "start_line": 21,
+      "end_line": 21,
+      "signature": "const PageTypeEntity PageType",
+      "language": "go"
+    },
+    {
+      "name": "PageTypeNarrative",
+      "kind": "const",
+      "file": "internal/encoding/page_type.go",
+      "start_line": 24,
+      "end_line": 24,
+      "signature": "const PageTypeNarrative PageType",
+      "language": "go"
+    },
+    {
+      "name": "hasCodeDefs",
+      "kind": "function",
+      "file": "internal/encoding/page_type.go",
+      "start_line": 50,
+      "end_line": 57,
+      "signature": "func hasCodeDefs(body string) bool",
+      "language": "go"
+    },
+    {
+      "name": "DetectPageType",
+      "kind": "function",
+      "file": "internal/encoding/page_type.go",
+      "start_line": 67,
+      "end_line": 84,
+      "signature": "func DetectPageType(body string, citedFiles []string) PageType",
+      "doc": "DetectPageType heuristically classifies a wiki page from its body\n(frontmatter already stripped) plus any cited_files paths from the\npage's frontmatter. Cited code files are the strongest signal; body\nshape is the fallback.",
+      "language": "go"
+    },
+    {
+      "name": "isEntityPage",
+      "kind": "function",
+      "file": "internal/encoding/page_type.go",
+      "start_line": 89,
+      "end_line": 104,
+      "signature": "func isEntityPage(body string) bool",
+      "doc": "isEntityPage returns true when the body is dominated by short \"- key:\nvalue\" bullet lines with little prose. Threshold: at least 4 fact-shaped\nbullets AND fact-bullets account for \u003e= 50% of non-blank lines.",
+      "language": "go"
+    },
+    {
+      "name": "TestDetectPageType_Function_FromCitedFile",
+      "kind": "function",
+      "file": "internal/encoding/page_type_test.go",
+      "start_line": 5,
+      "end_line": 14,
+      "signature": "func TestDetectPageType_Function_FromCitedFile(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDetectPageType_Function_FromBody",
+      "kind": "function",
+      "file": "internal/encoding/page_type_test.go",
+      "start_line": 16,
+      "end_line": 29,
+      "signature": "func TestDetectPageType_Function_FromBody(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDetectPageType_Entity_FromBulletFacts",
+      "kind": "function",
+      "file": "internal/encoding/page_type_test.go",
+      "start_line": 31,
+      "end_line": 45,
+      "signature": "func TestDetectPageType_Entity_FromBulletFacts(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDetectPageType_NarrativeDefault",
+      "kind": "function",
+      "file": "internal/encoding/page_type_test.go",
+      "start_line": 47,
+      "end_line": 57,
+      "signature": "func TestDetectPageType_NarrativeDefault(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDetectPageType_NoFalsePositiveOnShortBulletList",
+      "kind": "function",
+      "file": "internal/encoding/page_type_test.go",
+      "start_line": 59,
+      "end_line": 65,
+      "signature": "func TestDetectPageType_NoFalsePositiveOnShortBulletList(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestDetectPageType_CitedFileBeatsBody",
+      "kind": "function",
+      "file": "internal/encoding/page_type_test.go",
+      "start_line": 67,
+      "end_line": 73,
+      "signature": "func TestDetectPageType_CitedFileBeatsBody(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "fakeFitterEnc",
+      "kind": "type",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 9,
+      "end_line": 13,
+      "signature": "type fakeFitterEnc struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Name",
+      "kind": "method",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 15,
+      "end_line": 15,
+      "signature": "func (*fakeFitterEnc) Name() string",
+      "receiver": "fakeFitterEnc",
+      "language": "go"
+    },
+    {
+      "name": "Fit",
+      "kind": "method",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 17,
+      "end_line": 23,
+      "signature": "func (*fakeFitterEnc) Fit(corpus []string) error",
+      "receiver": "fakeFitterEnc",
+      "language": "go"
+    },
+    {
+      "name": "Encode",
+      "kind": "method",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 25,
+      "end_line": 27,
+      "signature": "func (*fakeFitterEnc) Encode(body string) (string, error)",
+      "receiver": "fakeFitterEnc",
+      "language": "go"
+    },
+    {
+      "name": "errEnc",
+      "kind": "type",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 29,
+      "end_line": 29,
+      "signature": "type errEnc struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Name",
+      "kind": "method",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 31,
+      "end_line": 31,
+      "signature": "func (errEnc) Name() string",
+      "receiver": "errEnc",
+      "language": "go"
+    },
+    {
+      "name": "Encode",
+      "kind": "method",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 32,
+      "end_line": 32,
+      "signature": "func (errEnc) Encode(string) (string, error)",
+      "receiver": "errEnc",
+      "language": "go"
+    },
+    {
+      "name": "TestPipelineEmptyName",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 34,
+      "end_line": 38,
+      "signature": "func TestPipelineEmptyName(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPipelineNameJoinsWithPlus",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 40,
+      "end_line": 45,
+      "signature": "func TestPipelineNameJoinsWithPlus(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPipelineEncodeChains",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 47,
+      "end_line": 59,
+      "signature": "func TestPipelineEncodeChains(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPipelineEncodeWrapsErrors",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 61,
+      "end_line": 70,
+      "signature": "func TestPipelineEncodeWrapsErrors(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPipelineFitOnlyStateful",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 72,
+      "end_line": 81,
+      "signature": "func TestPipelineFitOnlyStateful(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPipelineFitThreadsThroughEarlierEncoders",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 83,
+      "end_line": 94,
+      "signature": "func TestPipelineFitThreadsThroughEarlierEncoders(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPipelineFitNoopWhenNoFitter",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 96,
+      "end_line": 101,
+      "signature": "func TestPipelineFitNoopWhenNoFitter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestBuildPipeline",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 103,
+      "end_line": 139,
+      "signature": "func TestBuildPipeline(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestByNameUnknownReturnsPass",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 141,
+      "end_line": 146,
+      "signature": "func TestByNameUnknownReturnsPass(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestByNameKnown",
+      "kind": "function",
+      "file": "internal/encoding/pipeline_test.go",
+      "start_line": 148,
+      "end_line": 162,
+      "signature": "func TestByNameKnown(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "StructuralCard",
+      "kind": "type",
+      "file": "internal/encoding/structural_card.go",
+      "start_line": 35,
+      "end_line": 38,
+      "signature": "type StructuralCard struct{...}",
+      "doc": "StructuralCard is a function-page encoder. Extracts: signature, first\ndocstring sentence, top identifiers by frequency. Targets the\n\"function\" page type — discards prose narrative. ~3.5-4× compression.\n\nEmpirical (docs/encoding-bench-2026-04-29.md):\n  - CSN Python (200 q, 22k corpus): MRR 0.925 vs BM25 0.918 (+0.7%) at 3.95×\n  - RepoBench-R Python (500 q, 1.8k corpus): MRR 0.521 vs BM25 0.249 (+109%) at 3.21×\n\nRight at the LLMLingua-2 quality cliff but on the safe side. Apply\nonly to function / class pages; on entity-fact pages prefer\ndense-tuple, on narrative prose prefer glossary+md-caveman.",
+      "language": "go"
+    },
+    {
+      "name": "Name",
+      "kind": "method",
+      "file": "internal/encoding/structural_card.go",
+      "start_line": 41,
+      "end_line": 41,
+      "signature": "func (StructuralCard) Name() string",
+      "doc": "Name returns \"structural-card\".",
+      "receiver": "StructuralCard",
+      "language": "go"
+    },
+    {
+      "name": "cardCandidate",
+      "kind": "type",
+      "file": "internal/encoding/structural_card.go",
+      "start_line": 43,
+      "end_line": 46,
+      "signature": "type cardCandidate struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Encode",
+      "kind": "method",
+      "file": "internal/encoding/structural_card.go",
+      "start_line": 50,
+      "end_line": 75,
+      "signature": "func (StructuralCard) Encode(body string) (string, error)",
+      "doc": "Encode emits \"\u003csignature\u003e \u003cdoc-line\u003e \u003ctop-N idents\u003e\" — the highest-\nsignal slice of a definition, dropping bodies and boilerplate.",
+      "receiver": "StructuralCard",
+      "language": "go"
+    },
+    {
+      "name": "extractSignature",
+      "kind": "function",
+      "file": "internal/encoding/structural_card.go",
+      "start_line": 77,
+      "end_line": 90,
+      "signature": "func extractSignature(body string) string",
+      "language": "go"
+    },
+    {
+      "name": "extractDocLine",
+      "kind": "function",
+      "file": "internal/encoding/structural_card.go",
+      "start_line": 92,
+      "end_line": 112,
+      "signature": "func extractDocLine(body string, maxChars int) string",
+      "language": "go"
+    },
+    {
+      "name": "topIdentifiers",
+      "kind": "function",
+      "file": "internal/encoding/structural_card.go",
+      "start_line": 114,
+      "end_line": 137,
+      "signature": "func topIdentifiers(body string, n int) []string",
+      "language": "go"
+    },
+    {
+      "name": "TestStructuralCardName",
+      "kind": "function",
+      "file": "internal/encoding/structural_card_test.go",
+      "start_line": 8,
+      "end_line": 12,
+      "signature": "func TestStructuralCardName(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestStructuralCardPython",
+      "kind": "function",
+      "file": "internal/encoding/structural_card_test.go",
+      "start_line": 14,
+      "end_line": 39,
+      "signature": "func TestStructuralCardPython(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestStructuralCardGo",
+      "kind": "function",
+      "file": "internal/encoding/structural_card_test.go",
+      "start_line": 41,
+      "end_line": 59,
+      "signature": "func TestStructuralCardGo(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestStructuralCardCompresses",
+      "kind": "function",
+      "file": "internal/encoding/structural_card_test.go",
+      "start_line": 61,
+      "end_line": 82,
+      "signature": "func TestStructuralCardCompresses(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestStructuralCardNoSignature",
+      "kind": "function",
+      "file": "internal/encoding/structural_card_test.go",
+      "start_line": 84,
+      "end_line": 93,
+      "signature": "func TestStructuralCardNoSignature(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestStructuralCardDocLineTruncates",
+      "kind": "function",
+      "file": "internal/encoding/structural_card_test.go",
+      "start_line": 95,
+      "end_line": 108,
+      "signature": "func TestStructuralCardDocLineTruncates(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestStructuralCardTopIdentsBound",
+      "kind": "function",
+      "file": "internal/encoding/structural_card_test.go",
+      "start_line": 110,
+      "end_line": 122,
+      "signature": "func TestStructuralCardTopIdentsBound(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Commit",
+      "kind": "type",
+      "file": "internal/ingest/git.go",
+      "start_line": 21,
+      "end_line": 26,
+      "signature": "type Commit struct{...}",
+      "doc": "Commit is one git log entry.",
+      "language": "go"
+    },
+    {
+      "name": "Class",
+      "kind": "type",
+      "file": "internal/ingest/git.go",
+      "start_line": 29,
+      "end_line": 29,
+      "signature": "type Class int",
+      "doc": "Class is the kind of durable signal a commit carries.",
+      "language": "go"
+    },
+    {
+      "name": "ClassNone",
+      "kind": "const",
+      "file": "internal/ingest/git.go",
+      "start_line": 34,
+      "end_line": 34,
+      "signature": "const ClassNone Class",
+      "doc": "Class values.",
+      "language": "go"
+    },
+    {
+      "name": "ClassBreaking",
+      "kind": "const",
+      "file": "internal/ingest/git.go",
+      "start_line": 36,
+      "end_line": 36,
+      "signature": "const ClassBreaking",
+      "doc": "Class values.",
+      "language": "go"
+    },
+    {
+      "name": "ClassIncident",
+      "kind": "const",
+      "file": "internal/ingest/git.go",
+      "start_line": 38,
+      "end_line": 38,
+      "signature": "const ClassIncident",
+      "doc": "Class values.",
+      "language": "go"
+    },
+    {
+      "name": "ClassDecision",
+      "kind": "const",
+      "file": "internal/ingest/git.go",
+      "start_line": 40,
+      "end_line": 40,
+      "signature": "const ClassDecision",
+      "doc": "Class values.",
+      "language": "go"
+    },
+    {
+      "name": "ClassDependency",
+      "kind": "const",
+      "file": "internal/ingest/git.go",
+      "start_line": 42,
+      "end_line": 42,
+      "signature": "const ClassDependency",
+      "doc": "Class values.",
+      "language": "go"
+    },
+    {
+      "name": "String",
+      "kind": "method",
+      "file": "internal/ingest/git.go",
+      "start_line": 45,
+      "end_line": 58,
+      "signature": "func (Class) String() string",
+      "receiver": "Class",
+      "language": "go"
+    },
+    {
+      "name": "Action",
+      "kind": "type",
+      "file": "internal/ingest/git.go",
+      "start_line": 61,
+      "end_line": 68,
+      "signature": "type Action struct{...}",
+      "doc": "Action describes how a classified commit should land in the wiki.",
+      "language": "go"
+    },
+    {
+      "name": "Classify",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 97,
+      "end_line": 136,
+      "signature": "func Classify(c Commit) []Action",
+      "doc": "Classify returns zero or more Actions for one commit. Multiple actions are\npossible (a \"BREAKING incident hotfix\" commit logs once *and* spawns an\ninvestigation page).\n\nHeuristics:\n  - BREAKING: matched against subject + body but only at start of a line\n    (Conventional Commits convention). Avoids prose false positives.\n  - Incident / decision keywords: subject ONLY. Bodies dilute signal —\n    a commit body that *describes* the heuristic is not itself signal.\n  - Dependency bumps: subject only, major-version delta only.",
+      "language": "go"
+    },
+    {
+      "name": "Git",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 141,
+      "end_line": 183,
+      "signature": "func Git(wikiRoot, repoPath, since string, dryRun bool) ([]Action, error)",
+      "doc": "Git runs the heuristic ingest over a git repo. Returns one Action per\nwrite that was performed. dryRun returns the planned actions without\ntouching disk.",
+      "language": "go"
+    },
+    {
+      "name": "appendToLog",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 185,
+      "end_line": 196,
+      "signature": "func appendToLog(wikiRoot string, blocks []string) error",
+      "language": "go"
+    },
+    {
+      "name": "readCommits",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 198,
+      "end_line": 242,
+      "signature": "func readCommits(repoPath, since string) ([]Commit, error)",
+      "language": "go"
+    },
+    {
+      "name": "incidentTemplate",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 244,
+      "end_line": 272,
+      "signature": "func incidentTemplate(c Commit) string",
+      "language": "go"
+    },
+    {
+      "name": "decisionTemplate",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 274,
+      "end_line": 302,
+      "signature": "func decisionTemplate(c Commit) string",
+      "language": "go"
+    },
+    {
+      "name": "trim",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 306,
+      "end_line": 312,
+      "signature": "func trim(s string, n int) string",
+      "language": "go"
+    },
+    {
+      "name": "short",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 314,
+      "end_line": 319,
+      "signature": "func short(s string, n int) int",
+      "language": "go"
+    },
+    {
+      "name": "ifEmpty",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 321,
+      "end_line": 326,
+      "signature": "func ifEmpty(s, fallback string) string",
+      "language": "go"
+    },
+    {
+      "name": "firstWords",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 328,
+      "end_line": 334,
+      "signature": "func firstWords(s string, n int) string",
+      "language": "go"
+    },
+    {
+      "name": "slugify",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 336,
+      "end_line": 345,
+      "signature": "func slugify(s string) string",
+      "language": "go"
+    },
+    {
+      "name": "majorBumped",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 347,
+      "end_line": 354,
+      "signature": "func majorBumped(from, to string) bool",
+      "language": "go"
+    },
+    {
+      "name": "majorOf",
+      "kind": "function",
+      "file": "internal/ingest/git.go",
+      "start_line": 356,
+      "end_line": 360,
+      "signature": "func majorOf(v string) string",
+      "language": "go"
+    },
+    {
+      "name": "mkCommit",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 11,
+      "end_line": 16,
+      "signature": "func mkCommit(subj, body string) Commit",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyBreaking",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 18,
+      "end_line": 29,
+      "signature": "func TestClassifyBreaking(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyIncident",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 31,
+      "end_line": 53,
+      "signature": "func TestClassifyIncident(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyDecision",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 55,
+      "end_line": 72,
+      "signature": "func TestClassifyDecision(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyDependency",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 74,
+      "end_line": 98,
+      "signature": "func TestClassifyDependency(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyMultiple",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 100,
+      "end_line": 109,
+      "signature": "func TestClassifyMultiple(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyNoise",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 111,
+      "end_line": 116,
+      "signature": "func TestClassifyNoise(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyDoesNotMatchKeywordsInBody",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 122,
+      "end_line": 135,
+      "signature": "func TestClassifyDoesNotMatchKeywordsInBody(t *testing.T)",
+      "doc": "TestClassifyDoesNotMatchKeywordsInBody pins the v0.3.0-alpha regression:\na commit body that *describes* the heuristic (\"classifies by BREAKING:,\nincident keywords, ADR markers\") was wrongly flagged as breaking +\nincident + decision. Subject is the only signal-rich place; bodies dilute.",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyBreakingMatchesAtSubjectStart",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 139,
+      "end_line": 159,
+      "signature": "func TestClassifyBreakingMatchesAtSubjectStart(t *testing.T)",
+      "doc": "TestClassifyBreakingMatchesAtSubjectStart confirms the tightened regex\nstill matches the canonical \"BREAKING:\" / \"feat!:\" prefix forms.",
+      "language": "go"
+    },
+    {
+      "name": "TestIngestGitDryRunSkipsFilesystem",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 161,
+      "end_line": 172,
+      "signature": "func TestIngestGitDryRunSkipsFilesystem(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestAppendToLogPreservesExisting",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 174,
+      "end_line": 189,
+      "signature": "func TestAppendToLogPreservesExisting(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSlugify",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 191,
+      "end_line": 198,
+      "signature": "func TestSlugify(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMajorBumped",
+      "kind": "function",
+      "file": "internal/ingest/git_test.go",
+      "start_line": 200,
+      "end_line": 210,
+      "signature": "func TestMajorBumped(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "PR",
+      "kind": "type",
+      "file": "internal/ingest/github.go",
+      "start_line": 15,
+      "end_line": 23,
+      "signature": "type PR struct{...}",
+      "doc": "PR is one merged pull request fetched via the gh CLI.",
+      "language": "go"
+    },
+    {
+      "name": "ghLabel",
+      "kind": "type",
+      "file": "internal/ingest/github.go",
+      "start_line": 25,
+      "end_line": 27,
+      "signature": "type ghLabel struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "ghAuthor",
+      "kind": "type",
+      "file": "internal/ingest/github.go",
+      "start_line": 29,
+      "end_line": 31,
+      "signature": "type ghAuthor struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "classifyPR",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 55,
+      "end_line": 81,
+      "signature": "func classifyPR(p PR) Class",
+      "doc": "classifyPR returns the durable signal class for a PR. Combines:\n  - PR labels (highest signal, lowest noise — human-curated)\n  - Title-prefix Conventional Commits markers (BREAKING:, feat!:)\n  - Title keywords (incident / architecture / etc.)\n  - Body section headings (## Decision / ## Trade-offs / ## What happened)\n  - Major-version dep bump in title\n\nBody section headings are the v0.4 addition — they catch the common\ncase where a PR with a plain \"feat:\" title still has a structured\ndecision write-up in the body, which is the most useful signal to\nextract from a real PR history.",
+      "language": "go"
+    },
+    {
+      "name": "hasLabel",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 83,
+      "end_line": 93,
+      "signature": "func hasLabel(ls []ghLabel, want ...string) bool",
+      "language": "go"
+    },
+    {
+      "name": "GitHubResult",
+      "kind": "type",
+      "file": "internal/ingest/github.go",
+      "start_line": 96,
+      "end_line": 100,
+      "signature": "type GitHubResult struct{...}",
+      "doc": "GitHubResult summarizes one ingest run.",
+      "language": "go"
+    },
+    {
+      "name": "fetchPRs",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 104,
+      "end_line": 138,
+      "signature": "func fetchPRs(repo, since string, limit int) ([]PR, error)",
+      "doc": "fetchPRs shells out to `gh pr list` with the right --json fields. Limit\ncaps the page size; gh's default is 30, max 1000.",
+      "language": "go"
+    },
+    {
+      "name": "parseSince",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 143,
+      "end_line": 163,
+      "signature": "func parseSince(s string) (time.Time, error)",
+      "doc": "parseSince accepts a duration spec like \"30d\", \"7.days.ago\" (git style),\n\"168h\", or an RFC3339 timestamp. Always interpreted as \"PRs merged on or\nafter this point\".",
+      "language": "go"
+    },
+    {
+      "name": "parseDays",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 165,
+      "end_line": 175,
+      "signature": "func parseDays(s string) (int, bool)",
+      "language": "go"
+    },
+    {
+      "name": "parseGitDays",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 177,
+      "end_line": 190,
+      "signature": "func parseGitDays(s string) (int, bool)",
+      "language": "go"
+    },
+    {
+      "name": "jsonAtoi",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 193,
+      "end_line": 205,
+      "signature": "func jsonAtoi(s string) (int, error)",
+      "doc": "jsonAtoi is strconv.Atoi without importing strconv just for one helper.",
+      "language": "go"
+    },
+    {
+      "name": "GitHub",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 209,
+      "end_line": 259,
+      "signature": "func GitHub(wikiRoot, repo, since string, limit int, dryRun bool) (GitHubResult, error)",
+      "doc": "GitHub runs the GitHub-PR ingest. dryRun returns the planned actions\nwithout touching disk. repo is \"owner/name\".",
+      "language": "go"
+    },
+    {
+      "name": "findExistingPRPage",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 264,
+      "end_line": 286,
+      "signature": "func findExistingPRPage(wikiRoot string, n int) (bool, string)",
+      "doc": "findExistingPRPage walks decisions/ and investigations/ looking for a\npage whose frontmatter declares `pr_number: \u003cn\u003e`. Used to keep ingest\nidempotent across re-runs.",
+      "language": "go"
+    },
+    {
+      "name": "bytesContainsLine",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 288,
+      "end_line": 295,
+      "signature": "func bytesContainsLine(b []byte, line string) bool",
+      "language": "go"
+    },
+    {
+      "name": "writePRPage",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 297,
+      "end_line": 303,
+      "signature": "func writePRPage(wikiRoot, rel, body string) error",
+      "language": "go"
+    },
+    {
+      "name": "prAppendBlock",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 305,
+      "end_line": 316,
+      "signature": "func prAppendBlock(p PR, class Class) string",
+      "language": "go"
+    },
+    {
+      "name": "prIncidentTemplate",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 318,
+      "end_line": 353,
+      "signature": "func prIncidentTemplate(p PR) string",
+      "language": "go"
+    },
+    {
+      "name": "prDecisionTemplate",
+      "kind": "function",
+      "file": "internal/ingest/github.go",
+      "start_line": 355,
+      "end_line": 390,
+      "signature": "func prDecisionTemplate(p PR) string",
+      "language": "go"
+    },
+    {
+      "name": "mkPR",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 11,
+      "end_line": 25,
+      "signature": "func mkPR(title, body string, labels ...string) PR",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyPRByLabel",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 27,
+      "end_line": 48,
+      "signature": "func TestClassifyPRByLabel(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyPRByTitle",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 50,
+      "end_line": 71,
+      "signature": "func TestClassifyPRByTitle(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyPRDoesNotMatchKeywordsInBody",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 73,
+      "end_line": 82,
+      "signature": "func TestClassifyPRDoesNotMatchKeywordsInBody(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyPRBySectionHeading",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 84,
+      "end_line": 123,
+      "signature": "func TestClassifyPRBySectionHeading(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestClassifyPRLabelTrumpsTitle",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 125,
+      "end_line": 131,
+      "signature": "func TestClassifyPRLabelTrumpsTitle(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestParseSince",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 133,
+      "end_line": 164,
+      "signature": "func TestParseSince(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestParseSinceInvalid",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 166,
+      "end_line": 170,
+      "signature": "func TestParseSinceInvalid(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPRTemplatesShape",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 172,
+      "end_line": 194,
+      "signature": "func TestPRTemplatesShape(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestFindExistingPRPageDetectsByFrontmatter",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 196,
+      "end_line": 211,
+      "signature": "func TestFindExistingPRPageDetectsByFrontmatter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPRAppendBlockShape",
+      "kind": "function",
+      "file": "internal/ingest/github_test.go",
+      "start_line": 213,
+      "end_line": 221,
+      "signature": "func TestPRAppendBlockShape(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Citation",
+      "kind": "type",
+      "file": "internal/lint/drift.go",
+      "start_line": 16,
+      "end_line": 22,
+      "signature": "type Citation struct{...}",
+      "doc": "Citation is a single backtick-wrapped repo path reference found in a page.",
+      "language": "go"
+    },
+    {
+      "name": "BuildCiteRegex",
+      "kind": "function",
+      "file": "internal/lint/drift.go",
+      "start_line": 26,
+      "end_line": 36,
+      "signature": "func BuildCiteRegex(prefixes []string) *regexp.Regexp",
+      "doc": "BuildCiteRegex returns the citation matcher for the given repo prefixes,\nor nil when no prefixes are configured (callers treat nil as \"skip\").",
+      "language": "go"
+    },
+    {
+      "name": "stripFencesOnly",
+      "kind": "function",
+      "file": "internal/lint/drift.go",
+      "start_line": 41,
+      "end_line": 61,
+      "signature": "func stripFencesOnly(text string) string",
+      "doc": "stripFencesOnly preserves inline backticks (which carry citations) and\nblanks out fenced-code blocks so their contents don't produce false\npositives.",
+      "language": "go"
+    },
+    {
+      "name": "ExtractCitations",
+      "kind": "function",
+      "file": "internal/lint/drift.go",
+      "start_line": 64,
+      "end_line": 102,
+      "signature": "func ExtractCitations(text, sourceFile string, dc config.DriftConfig) []Citation",
+      "doc": "ExtractCitations finds all repo-prefixed backtick citations in text.",
+      "language": "go"
+    },
+    {
+      "name": "Verify",
+      "kind": "function",
+      "file": "internal/lint/drift.go",
+      "start_line": 105,
+      "end_line": 155,
+      "signature": "func Verify(c Citation, gigarepoRoot string) []Violation",
+      "doc": "Verify checks one citation against the gigarepo on disk.",
+      "language": "go"
+    },
+    {
+      "name": "CheckPage",
+      "kind": "function",
+      "file": "internal/lint/drift.go",
+      "start_line": 158,
+      "end_line": 176,
+      "signature": "func CheckPage(page, wikiRoot string, dc config.DriftConfig) ([]Violation, error)",
+      "doc": "CheckPage runs drift on every citation in a single wiki page.",
+      "language": "go"
+    },
+    {
+      "name": "lineCount",
+      "kind": "function",
+      "file": "internal/lint/drift.go",
+      "start_line": 178,
+      "end_line": 191,
+      "signature": "func lineCount(path string) (int, error)",
+      "language": "go"
+    },
+    {
+      "name": "driftCfg",
+      "kind": "function",
+      "file": "internal/lint/drift_test.go",
+      "start_line": 12,
+      "end_line": 18,
+      "signature": "func driftCfg() config.DriftConfig",
+      "language": "go"
+    },
+    {
+      "name": "gigarepoFixture",
+      "kind": "function",
+      "file": "internal/lint/drift_test.go",
+      "start_line": 20,
+      "end_line": 35,
+      "signature": "func gigarepoFixture(t *testing.T) string",
+      "language": "go"
+    },
+    {
+      "name": "TestExtractCitations",
+      "kind": "function",
+      "file": "internal/lint/drift_test.go",
+      "start_line": 37,
+      "end_line": 102,
+      "signature": "func TestExtractCitations(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestExtractCitationWithLineRange",
+      "kind": "function",
+      "file": "internal/lint/drift_test.go",
+      "start_line": 104,
+      "end_line": 110,
+      "signature": "func TestExtractCitationWithLineRange(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestExtractCitationsEmptyPrefixes",
+      "kind": "function",
+      "file": "internal/lint/drift_test.go",
+      "start_line": 112,
+      "end_line": 118,
+      "signature": "func TestExtractCitationsEmptyPrefixes(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestVerify",
+      "kind": "function",
+      "file": "internal/lint/drift_test.go",
+      "start_line": 120,
+      "end_line": 183,
+      "signature": "func TestVerify(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestCheckPageEndToEnd",
+      "kind": "function",
+      "file": "internal/lint/drift_test.go",
+      "start_line": 185,
+      "end_line": 221,
+      "signature": "func TestCheckPageEndToEnd(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "StripFrontmatter",
+      "kind": "function",
+      "file": "internal/lint/frontmatter.go",
+      "start_line": 14,
+      "end_line": 24,
+      "signature": "func StripFrontmatter(text string) string",
+      "doc": "StripFrontmatter returns text with any leading YAML frontmatter removed.\nIf there is no frontmatter (or it is unterminated) the text is returned\nunchanged.",
+      "language": "go"
+    },
+    {
+      "name": "ExtractFrontmatter",
+      "kind": "function",
+      "file": "internal/lint/frontmatter.go",
+      "start_line": 30,
+      "end_line": 64,
+      "signature": "func ExtractFrontmatter(text string) map[string]any",
+      "doc": "ExtractFrontmatter parses the YAML frontmatter at the start of text. If\nthere is no frontmatter, parsing fails, or the result is not a map, an\nempty map is returned. The rules layer flags those cases as violations;\nthis helper never errors so that callers stay simple.",
+      "language": "go"
+    },
+    {
+      "name": "TestStripFrontmatter",
+      "kind": "function",
+      "file": "internal/lint/frontmatter_test.go",
+      "start_line": 8,
+      "end_line": 30,
+      "signature": "func TestStripFrontmatter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestExtractFrontmatter",
+      "kind": "function",
+      "file": "internal/lint/frontmatter_test.go",
+      "start_line": 32,
+      "end_line": 65,
+      "signature": "func TestExtractFrontmatter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "readBytes",
+      "kind": "function",
+      "file": "internal/lint/io.go",
+      "start_line": 7,
+      "end_line": 9,
+      "signature": "func readBytes(path string) ([]byte, error)",
+      "doc": "readBytes is the IO point. Tests can swap readFile in rules.go to inject\nfixtures without touching disk; the production path uses os.ReadFile.",
+      "language": "go"
+    },
+    {
+      "name": "PageRecord",
+      "kind": "type",
+      "file": "internal/lint/meta.go",
+      "start_line": 17,
+      "end_line": 25,
+      "signature": "type PageRecord struct{...}",
+      "doc": "PageRecord is the per-page entry written to _meta.json.",
+      "language": "go"
+    },
+    {
+      "name": "MetaIndex",
+      "kind": "type",
+      "file": "internal/lint/meta.go",
+      "start_line": 28,
+      "end_line": 32,
+      "signature": "type MetaIndex struct{...}",
+      "doc": "MetaIndex is the deserialized shape of _meta.json.",
+      "language": "go"
+    },
+    {
+      "name": "AllPages",
+      "kind": "function",
+      "file": "internal/lint/meta.go",
+      "start_line": 37,
+      "end_line": 81,
+      "signature": "func AllPages(wikiRoot string, lc config.LintConfig) ([]string, error)",
+      "doc": "AllPages walks the wiki tree and returns the markdown files that should\nparticipate in lint, drift, and meta. The skip rules come from\nLintConfig.SkipFilenames + SkipPathParts.",
+      "language": "go"
+    },
+    {
+      "name": "PageRecordFor",
+      "kind": "function",
+      "file": "internal/lint/meta.go",
+      "start_line": 84,
+      "end_line": 156,
+      "signature": "func PageRecordFor(path, wikiRoot string, dc config.DriftConfig) (PageRecord, error)",
+      "doc": "PageRecordFor builds the metadata dict for a single page.",
+      "language": "go"
+    },
+    {
+      "name": "BuildMeta",
+      "kind": "function",
+      "file": "internal/lint/meta.go",
+      "start_line": 159,
+      "end_line": 176,
+      "signature": "func BuildMeta(wikiRoot string, lc config.LintConfig, dc config.DriftConfig) (MetaIndex, error)",
+      "doc": "BuildMeta walks the wiki and returns a MetaIndex sorted by slug.",
+      "language": "go"
+    },
+    {
+      "name": "Marshal",
+      "kind": "function",
+      "file": "internal/lint/meta.go",
+      "start_line": 180,
+      "end_line": 187,
+      "signature": "func Marshal(index MetaIndex) ([]byte, error)",
+      "doc": "Marshal returns the deterministic JSON serialization (2-space indent +\ntrailing newline) used for _meta.json.",
+      "language": "go"
+    },
+    {
+      "name": "stringList",
+      "kind": "function",
+      "file": "internal/lint/meta.go",
+      "start_line": 189,
+      "end_line": 202,
+      "signature": "func stringList(v any) []string",
+      "language": "go"
+    },
+    {
+      "name": "TestPageRecordWithFrontmatter",
+      "kind": "function",
+      "file": "internal/lint/meta_test.go",
+      "start_line": 11,
+      "end_line": 45,
+      "signature": "func TestPageRecordWithFrontmatter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPageRecordNoFrontmatter",
+      "kind": "function",
+      "file": "internal/lint/meta_test.go",
+      "start_line": 47,
+      "end_line": 63,
+      "signature": "func TestPageRecordNoFrontmatter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPageRecordExtractsTitleWhenMissing",
+      "kind": "function",
+      "file": "internal/lint/meta_test.go",
+      "start_line": 65,
+      "end_line": 75,
+      "signature": "func TestPageRecordExtractsTitleWhenMissing(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestPageRecordExplicitCitedFiles",
+      "kind": "function",
+      "file": "internal/lint/meta_test.go",
+      "start_line": 77,
+      "end_line": 98,
+      "signature": "func TestPageRecordExplicitCitedFiles(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestBuildMetaSkipsAndSorts",
+      "kind": "function",
+      "file": "internal/lint/meta_test.go",
+      "start_line": 100,
+      "end_line": 124,
+      "signature": "func TestBuildMetaSkipsAndSorts(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestMarshalDeterministic",
+      "kind": "function",
+      "file": "internal/lint/meta_test.go",
+      "start_line": 126,
+      "end_line": 147,
+      "signature": "func TestMarshalDeterministic(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Severity",
+      "kind": "type",
+      "file": "internal/lint/rules.go",
+      "start_line": 18,
+      "end_line": 18,
+      "signature": "type Severity string",
+      "doc": "Severity classifies a Violation. \"error\" fails CI; \"warning\" surfaces in\nreports without failing.",
+      "language": "go"
+    },
+    {
+      "name": "SevError",
+      "kind": "const",
+      "file": "internal/lint/rules.go",
+      "start_line": 22,
+      "end_line": 22,
+      "signature": "const SevError Severity",
+      "doc": "Severity values in priority order (errors fail CI; warnings inform).",
+      "language": "go"
+    },
+    {
+      "name": "SevWarning",
+      "kind": "const",
+      "file": "internal/lint/rules.go",
+      "start_line": 23,
+      "end_line": 23,
+      "signature": "const SevWarning Severity",
+      "doc": "Severity values in priority order (errors fail CI; warnings inform).",
+      "language": "go"
+    },
+    {
+      "name": "Violation",
+      "kind": "type",
+      "file": "internal/lint/rules.go",
+      "start_line": 27,
+      "end_line": 34,
+      "signature": "type Violation struct{...}",
+      "doc": "Violation is a single rule failure on a single page.",
+      "language": "go"
+    },
+    {
+      "name": "CheckTitle",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 57,
+      "end_line": 73,
+      "signature": "func CheckTitle(path, body string) []Violation",
+      "doc": "CheckTitle verifies the page starts with a level-1 heading.",
+      "language": "go"
+    },
+    {
+      "name": "CheckSummary",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 77,
+      "end_line": 106,
+      "signature": "func CheckSummary(path, body string) []Violation",
+      "doc": "CheckSummary verifies a `\u003e ...` summary line within the first 5 non-empty\nlines after the title.",
+      "language": "go"
+    },
+    {
+      "name": "CheckSources",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 109,
+      "end_line": 117,
+      "signature": "func CheckSources(path, body string) []Violation",
+      "doc": "CheckSources verifies a `## Sources` section is present.",
+      "language": "go"
+    },
+    {
+      "name": "CheckSeeAlso",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 120,
+      "end_line": 128,
+      "signature": "func CheckSeeAlso(path, body string) []Violation",
+      "doc": "CheckSeeAlso verifies a `## See Also` section is present.",
+      "language": "go"
+    },
+    {
+      "name": "CheckWikilinks",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 132,
+      "end_line": 164,
+      "signature": "func CheckWikilinks(path, body, wikiRoot string) []Violation",
+      "doc": "CheckWikilinks verifies every `[[link]]` resolves to a markdown file in\nthe wiki tree. Links inside fenced or inline code blocks are ignored.",
+      "language": "go"
+    },
+    {
+      "name": "CheckFilename",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 167,
+      "end_line": 184,
+      "signature": "func CheckFilename(path string, lc config.LintConfig) []Violation",
+      "doc": "CheckFilename verifies a page's filename matches the project conventions.",
+      "language": "go"
+    },
+    {
+      "name": "CheckFrontmatter",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 188,
+      "end_line": 227,
+      "signature": "func CheckFrontmatter(path, body string, lc config.LintConfig) []Violation",
+      "doc": "CheckFrontmatter verifies a page's YAML frontmatter is present, parseable,\nand contains every required field.",
+      "language": "go"
+    },
+    {
+      "name": "RunAll",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 230,
+      "end_line": 244,
+      "signature": "func RunAll(path, wikiRoot string, lc config.LintConfig) ([]Violation, error)",
+      "doc": "RunAll runs every rule against the given file path.",
+      "language": "go"
+    },
+    {
+      "name": "stripCodeRegions",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 249,
+      "end_line": 272,
+      "signature": "func stripCodeRegions(text string) string",
+      "doc": "stripCodeRegions blanks out fenced and inline code blocks so the wikilink\nregex doesn't match patterns inside code samples. Line / column counts\nare preserved.",
+      "language": "go"
+    },
+    {
+      "name": "buildPageIndex",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 276,
+      "end_line": 302,
+      "signature": "func buildPageIndex(wikiRoot string) (map[string][]string, error)",
+      "doc": "buildPageIndex walks wikiRoot for *.md files and indexes them by\nlowercased stem and by the Obsidian display form (\"my-page\" → \"my page\").",
+      "language": "go"
+    },
+    {
+      "name": "extractTitle",
+      "kind": "function",
+      "file": "internal/lint/rules.go",
+      "start_line": 305,
+      "end_line": 310,
+      "signature": "func extractTitle(body string) string",
+      "doc": "extractTitle returns the first `# Heading` line content, or \"\" if none.",
+      "language": "go"
+    },
+    {
+      "name": "writeFile",
+      "kind": "function",
+      "file": "internal/lint/rules_test.go",
+      "start_line": 12,
+      "end_line": 21,
+      "signature": "func writeFile(t *testing.T, path, contents string) string",
+      "language": "go"
+    },
+    {
+      "name": "TestCheckTitle",
+      "kind": "function",
+      "file": "internal/lint/rules_test.go",
+      "start_line": 25,
+      "end_line": 48,
+      "signature": "func TestCheckTitle(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestCheckSummary",
+      "kind": "function",
+      "file": "internal/lint/rules_test.go",
+      "start_line": 50,
+      "end_line": 68,
+      "signature": "func TestCheckSummary(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestCheckSourcesAndSeeAlso",
+      "kind": "function",
+      "file": "internal/lint/rules_test.go",
+      "start_line": 70,
+      "end_line": 94,
+      "signature": "func TestCheckSourcesAndSeeAlso(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestCheckWikilinks",
+      "kind": "function",
+      "file": "internal/lint/rules_test.go",
+      "start_line": 96,
+      "end_line": 122,
+      "signature": "func TestCheckWikilinks(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestCheckFilename",
+      "kind": "function",
+      "file": "internal/lint/rules_test.go",
+      "start_line": 124,
+      "end_line": 148,
+      "signature": "func TestCheckFilename(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestCheckFrontmatter",
+      "kind": "function",
+      "file": "internal/lint/rules_test.go",
+      "start_line": 150,
+      "end_line": 216,
+      "signature": "func TestCheckFrontmatter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestRunAllAggregates",
+      "kind": "function",
+      "file": "internal/lint/rules_test.go",
+      "start_line": 218,
+      "end_line": 234,
+      "signature": "func TestRunAllAggregates(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestExtractTitle",
+      "kind": "function",
+      "file": "internal/lint/rules_test.go",
+      "start_line": 236,
+      "end_line": 249,
+      "signature": "func TestExtractTitle(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "RunResult",
+      "kind": "type",
+      "file": "internal/lint/runner.go",
+      "start_line": 15,
+      "end_line": 19,
+      "signature": "type RunResult struct{...}",
+      "doc": "RunResult is the aggregate output of a lint or drift sweep.",
+      "language": "go"
+    },
+    {
+      "name": "Run",
+      "kind": "function",
+      "file": "internal/lint/runner.go",
+      "start_line": 22,
+      "end_line": 32,
+      "signature": "func Run(targets []string, cfg config.KeebaConfig) (RunResult, error)",
+      "doc": "Run runs the schema rules over a given list of files.",
+      "language": "go"
+    },
+    {
+      "name": "DriftTargets",
+      "kind": "function",
+      "file": "internal/lint/runner.go",
+      "start_line": 35,
+      "end_line": 45,
+      "signature": "func DriftTargets(targets []string, cfg config.KeebaConfig) (RunResult, error)",
+      "doc": "DriftTargets runs the citation-drift checks over a given list of files.",
+      "language": "go"
+    },
+    {
+      "name": "StagedPages",
+      "kind": "function",
+      "file": "internal/lint/runner.go",
+      "start_line": 50,
+      "end_line": 65,
+      "signature": "func StagedPages(wikiRoot string) ([]string, error)",
+      "doc": "StagedPages returns the .md files staged for commit under wikiRoot. It\nshells out to git; an empty slice is returned (no error) if git isn't\navailable or the directory isn't a repo.",
+      "language": "go"
+    },
+    {
+      "name": "FormatText",
+      "kind": "function",
+      "file": "internal/lint/runner.go",
+      "start_line": 68,
+      "end_line": 114,
+      "signature": "func FormatText(violations []Violation, wikiRoot string) string",
+      "doc": "FormatText renders violations as a grouped, human-readable string.",
+      "language": "go"
+    },
+    {
+      "name": "FormatJSON",
+      "kind": "function",
+      "file": "internal/lint/runner.go",
+      "start_line": 117,
+      "end_line": 142,
+      "signature": "func FormatJSON(violations []Violation, wikiRoot string) (string, error)",
+      "doc": "FormatJSON renders violations as a JSON array suitable for tooling.",
+      "language": "go"
+    },
+    {
+      "name": "summarize",
+      "kind": "function",
+      "file": "internal/lint/runner.go",
+      "start_line": 144,
+      "end_line": 155,
+      "signature": "func summarize(v []Violation) RunResult",
+      "language": "go"
+    },
+    {
+      "name": "XrefEntry",
+      "kind": "type",
+      "file": "internal/lint/xref.go",
+      "start_line": 15,
+      "end_line": 18,
+      "signature": "type XrefEntry struct{...}",
+      "doc": "XrefEntry is one citing-page line in the reverse index.",
+      "language": "go"
+    },
+    {
+      "name": "Xref",
+      "kind": "type",
+      "file": "internal/lint/xref.go",
+      "start_line": 21,
+      "end_line": 21,
+      "signature": "type Xref map[string]map[string][]XrefEntry",
+      "doc": "Xref maps repo → in-repo path → list of citing pages.",
+      "language": "go"
+    },
+    {
+      "name": "BuildXref",
+      "kind": "function",
+      "file": "internal/lint/xref.go",
+      "start_line": 26,
+      "end_line": 48,
+      "signature": "func BuildXref(pages []PageRecord, dc config.DriftConfig) Xref",
+      "doc": "BuildXref turns a list of meta-index page records into a per-repo reverse\nindex. Citations whose path doesn't match any configured prefix are\nskipped.",
+      "language": "go"
+    },
+    {
+      "name": "WriteXref",
+      "kind": "function",
+      "file": "internal/lint/xref.go",
+      "start_line": 52,
+      "end_line": 103,
+      "signature": "func WriteXref(x Xref, wikiRoot string) (int, error)",
+      "doc": "WriteXref serializes the reverse index to wiki/_xref/\u003crepo\u003e.json files,\nremoving files that no longer have any citations.",
+      "language": "go"
+    },
+    {
+      "name": "splitByPrefix",
+      "kind": "function",
+      "file": "internal/lint/xref.go",
+      "start_line": 105,
+      "end_line": 113,
+      "signature": "func splitByPrefix(cited string, prefixes []string) (repo, inRepo string)",
+      "language": "go"
+    },
+    {
+      "name": "xrefDriftCfg",
+      "kind": "function",
+      "file": "internal/lint/xref_test.go",
+      "start_line": 13,
+      "end_line": 15,
+      "signature": "func xrefDriftCfg() config.DriftConfig",
+      "language": "go"
+    },
+    {
+      "name": "TestBuildXrefGroupsByRepo",
+      "kind": "function",
+      "file": "internal/lint/xref_test.go",
+      "start_line": 17,
+      "end_line": 35,
+      "signature": "func TestBuildXrefGroupsByRepo(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestBuildXrefStripsLineSuffix",
+      "kind": "function",
+      "file": "internal/lint/xref_test.go",
+      "start_line": 37,
+      "end_line": 46,
+      "signature": "func TestBuildXrefStripsLineSuffix(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestBuildXrefSkipsUnknownRepo",
+      "kind": "function",
+      "file": "internal/lint/xref_test.go",
+      "start_line": 48,
+      "end_line": 54,
+      "signature": "func TestBuildXrefSkipsUnknownRepo(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestBuildXrefEmpty",
+      "kind": "function",
+      "file": "internal/lint/xref_test.go",
+      "start_line": 56,
+      "end_line": 60,
+      "signature": "func TestBuildXrefEmpty(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestWriteXrefPerRepo",
+      "kind": "function",
+      "file": "internal/lint/xref_test.go",
+      "start_line": 62,
+      "end_line": 83,
+      "signature": "func TestWriteXrefPerRepo(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestWriteXrefRemovesStaleFiles",
+      "kind": "function",
+      "file": "internal/lint/xref_test.go",
+      "start_line": 85,
+      "end_line": 104,
+      "signature": "func TestWriteXrefRemovesStaleFiles(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Answer",
+      "kind": "type",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 21,
+      "end_line": 27,
+      "signature": "type Answer struct{...}",
+      "doc": "Answer is one LLM response with usage + timing.",
+      "language": "go"
+    },
+    {
+      "name": "Evaluator",
+      "kind": "interface",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 31,
+      "end_line": 35,
+      "signature": "type Evaluator interface{...}",
+      "doc": "Evaluator answers one question given a context blob. Implementations are\nstateless — bench creates one per run and reuses it across questions.",
+      "language": "go"
+    },
+    {
+      "name": "Anthropic",
+      "kind": "type",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 38,
+      "end_line": 45,
+      "signature": "type Anthropic struct{...}",
+      "doc": "Anthropic is an Evaluator backed by the Anthropic Messages API.",
+      "language": "go"
+    },
+    {
+      "name": "NewAnthropic",
+      "kind": "function",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 50,
+      "end_line": 71,
+      "signature": "func NewAnthropic() (*Anthropic, error)",
+      "doc": "NewAnthropic builds an Anthropic client from environment configuration.\nReturns (nil, nil) when ANTHROPIC_API_KEY is unset — callers should treat\nthat as \"skip LLM mode\" rather than a hard error.",
+      "language": "go"
+    },
+    {
+      "name": "Provider",
+      "kind": "method",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 74,
+      "end_line": 74,
+      "signature": "func (*Anthropic) Provider() string",
+      "doc": "Provider returns the human-readable provider tag.",
+      "receiver": "Anthropic",
+      "language": "go"
+    },
+    {
+      "name": "Model",
+      "kind": "method",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 77,
+      "end_line": 77,
+      "signature": "func (*Anthropic) Model() string",
+      "doc": "Model returns the configured model identifier.",
+      "receiver": "Anthropic",
+      "language": "go"
+    },
+    {
+      "name": "apiRequest",
+      "kind": "type",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 85,
+      "end_line": 90,
+      "signature": "type apiRequest struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "apiMessage",
+      "kind": "type",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 92,
+      "end_line": 95,
+      "signature": "type apiMessage struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "apiResponse",
+      "kind": "type",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 97,
+      "end_line": 105,
+      "signature": "type apiResponse struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Answer",
+      "kind": "method",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 109,
+      "end_line": 155,
+      "signature": "func (*Anthropic) Answer(ctx context.Context, question, contextBlob string) (Answer, error)",
+      "doc": "Answer submits one question with one context blob and returns the\nrecorded usage.",
+      "receiver": "Anthropic",
+      "language": "go"
+    },
+    {
+      "name": "parseConfidence",
+      "kind": "function",
+      "file": "internal/llm/anthropic.go",
+      "start_line": 159,
+      "end_line": 169,
+      "signature": "func parseConfidence(text string) int",
+      "language": "go"
+    },
+    {
+      "name": "TestParseConfidence",
+      "kind": "function",
+      "file": "internal/llm/anthropic_test.go",
+      "start_line": 11,
+      "end_line": 28,
+      "signature": "func TestParseConfidence(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestAnthropicAnswerRoundTrip",
+      "kind": "function",
+      "file": "internal/llm/anthropic_test.go",
+      "start_line": 30,
+      "end_line": 60,
+      "signature": "func TestAnthropicAnswerRoundTrip(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestAnthropicAnswerHTTPError",
+      "kind": "function",
+      "file": "internal/llm/anthropic_test.go",
+      "start_line": 62,
+      "end_line": 73,
+      "signature": "func TestAnthropicAnswerHTTPError(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestNewAnthropicReturnsNilWithoutKey",
+      "kind": "function",
+      "file": "internal/llm/anthropic_test.go",
+      "start_line": 75,
+      "end_line": 84,
+      "signature": "func TestNewAnthropicReturnsNilWithoutKey(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "rpcRequest",
+      "kind": "type",
+      "file": "internal/mcp/server.go",
+      "start_line": 24,
+      "end_line": 29,
+      "signature": "type rpcRequest struct{...}",
+      "doc": "rpcRequest is a JSON-RPC 2.0 request envelope.",
+      "language": "go"
+    },
+    {
+      "name": "rpcError",
+      "kind": "type",
+      "file": "internal/mcp/server.go",
+      "start_line": 31,
+      "end_line": 35,
+      "signature": "type rpcError struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "rpcResponse",
+      "kind": "type",
+      "file": "internal/mcp/server.go",
+      "start_line": 37,
+      "end_line": 42,
+      "signature": "type rpcResponse struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "Server",
+      "kind": "type",
+      "file": "internal/mcp/server.go",
+      "start_line": 45,
+      "end_line": 49,
+      "signature": "type Server struct{...}",
+      "doc": "Server is a stdio MCP server backed by a BM25 search index.",
+      "language": "go"
+    },
+    {
+      "name": "New",
+      "kind": "function",
+      "file": "internal/mcp/server.go",
+      "start_line": 53,
+      "end_line": 59,
+      "signature": "func New(cfg config.KeebaConfig) (*Server, error)",
+      "doc": "New builds the BM25 index up-front so /tools/call queries are fast.\nThe default Version is \"dev\"; CLI callers should set it from cli.Version.",
+      "language": "go"
+    },
+    {
+      "name": "Serve",
+      "kind": "method",
+      "file": "internal/mcp/server.go",
+      "start_line": 64,
+      "end_line": 105,
+      "signature": "func (*Server) Serve(ctx context.Context, r io.Reader, w io.Writer) error",
+      "doc": "Serve reads JSON-RPC frames from r (one JSON object per line, per MCP's\nstdio transport) and writes responses to w. Returns when r reaches EOF or\nctx is canceled.",
+      "receiver": "Server",
+      "language": "go"
+    },
+    {
+      "name": "dispatch",
+      "kind": "method",
+      "file": "internal/mcp/server.go",
+      "start_line": 107,
+      "end_line": 151,
+      "signature": "func (*Server) dispatch(req rpcRequest) rpcResponse",
+      "receiver": "Server",
+      "language": "go"
+    },
+    {
+      "name": "callParams",
+      "kind": "type",
+      "file": "internal/mcp/server.go",
+      "start_line": 153,
+      "end_line": 159,
+      "signature": "type callParams struct{...}",
+      "language": "go"
+    },
+    {
+      "name": "toolsCall",
+      "kind": "method",
+      "file": "internal/mcp/server.go",
+      "start_line": 161,
+      "end_line": 187,
+      "signature": "func (*Server) toolsCall(raw json.RawMessage) rpcResponse",
+      "receiver": "Server",
+      "language": "go"
+    },
+    {
+      "name": "writeFile",
+      "kind": "function",
+      "file": "internal/mcp/server_test.go",
+      "start_line": 17,
+      "end_line": 25,
+      "signature": "func writeFile(t *testing.T, p, body string)",
+      "language": "go"
+    },
+    {
+      "name": "corpusServer",
+      "kind": "function",
+      "file": "internal/mcp/server_test.go",
+      "start_line": 27,
+      "end_line": 41,
+      "signature": "func corpusServer(t *testing.T) *Server",
+      "language": "go"
+    },
+    {
+      "name": "roundTrip",
+      "kind": "function",
+      "file": "internal/mcp/server_test.go",
+      "start_line": 43,
+      "end_line": 62,
+      "signature": "func roundTrip(t *testing.T, s *Server, requests ...string) []map[string]any",
+      "language": "go"
+    },
+    {
+      "name": "TestInitialize",
+      "kind": "function",
+      "file": "internal/mcp/server_test.go",
+      "start_line": 64,
+      "end_line": 78,
+      "signature": "func TestInitialize(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestToolsList",
+      "kind": "function",
+      "file": "internal/mcp/server_test.go",
+      "start_line": 80,
+      "end_line": 91,
+      "signature": "func TestToolsList(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestToolsCallReturnsHits",
+      "kind": "function",
+      "file": "internal/mcp/server_test.go",
+      "start_line": 93,
+      "end_line": 104,
+      "signature": "func TestToolsCallReturnsHits(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestToolsCallUnknownTool",
+      "kind": "function",
+      "file": "internal/mcp/server_test.go",
+      "start_line": 106,
+      "end_line": 114,
+      "signature": "func TestToolsCallUnknownTool(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestNotificationsIgnored",
+      "kind": "function",
+      "file": "internal/mcp/server_test.go",
+      "start_line": 116,
+      "end_line": 125,
+      "signature": "func TestNotificationsIgnored(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestUnknownMethod",
+      "kind": "function",
+      "file": "internal/mcp/server_test.go",
+      "start_line": 127,
+      "end_line": 136,
+      "signature": "func TestUnknownMethod(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "encodedBody",
+      "kind": "type",
+      "file": "internal/scaffold/encode.go",
+      "start_line": 13,
+      "end_line": 17,
+      "signature": "type encodedBody struct{...}",
+      "doc": "encodedBody is the result of applying the page-type-aware encoding\npipeline to a wiki page body. PageType and Pipeline get persisted in\nfrontmatter so subsequent `keeba sync` runs can reproduce the encoding.",
+      "language": "go"
+    },
+    {
+      "name": "applyEncoding",
+      "kind": "function",
+      "file": "internal/scaffold/encode.go",
+      "start_line": 30,
+      "end_line": 52,
+      "signature": "func applyEncoding(body string, citedFiles []string, enc config.EncodingConfig) encodedBody",
+      "doc": "applyEncoding detects the page-type from body + cited_files and runs\nthe matching pipeline from cfg. Returns the original body unchanged\nwhen no pipeline is configured for the type, or the cfg is empty, or\nthe pipeline build fails (graceful degradation — encoding is a\nnice-to-have, not a blocker for ingest).\n\nGlossary-style stateful encoders are effectively no-ops here because\nthe corpus seen at ingest time is just one page. The bench-time grid\n(`keeba bench --encoding-grid-by-type`) is the right tool for\nglossary-relevant compression; ingest-time encoding focuses on the\nstateless plugins (caveman, structural-card, dense-tuple).",
+      "language": "go"
+    },
+    {
+      "name": "citedFileFromOrigin",
+      "kind": "function",
+      "file": "internal/scaffold/encode.go",
+      "start_line": 57,
+      "end_line": 59,
+      "signature": "func citedFileFromOrigin(repoName, origin string) string",
+      "doc": "citedFileFromOrigin builds the conventional \"\u003crepo\u003e/\u003corigin-path\u003e\"\ncitation string used by wrapImported's frontmatter. The Encoding\ndetector inspects the file extension to pick function vs narrative.",
+      "language": "go"
+    },
+    {
+      "name": "TestApplyEncoding_NoConfigIsNoop",
+      "kind": "function",
+      "file": "internal/scaffold/encode_test.go",
+      "start_line": 12,
+      "end_line": 21,
+      "signature": "func TestApplyEncoding_NoConfigIsNoop(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestApplyEncoding_NarrativePipelineApplied",
+      "kind": "function",
+      "file": "internal/scaffold/encode_test.go",
+      "start_line": 23,
+      "end_line": 36,
+      "signature": "func TestApplyEncoding_NarrativePipelineApplied(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestApplyEncoding_FunctionPagePicksFunctionPipeline",
+      "kind": "function",
+      "file": "internal/scaffold/encode_test.go",
+      "start_line": 38,
+      "end_line": 51,
+      "signature": "func TestApplyEncoding_FunctionPagePicksFunctionPipeline(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestApplyEncoding_BadPipelineDegradesGracefully",
+      "kind": "function",
+      "file": "internal/scaffold/encode_test.go",
+      "start_line": 53,
+      "end_line": 63,
+      "signature": "func TestApplyEncoding_BadPipelineDegradesGracefully(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestImportFromRepoWithEncoding_AddsPageTypeAndEncodingFrontmatter",
+      "kind": "function",
+      "file": "internal/scaffold/encode_test.go",
+      "start_line": 65,
+      "end_line": 92,
+      "signature": "func TestImportFromRepoWithEncoding_AddsPageTypeAndEncodingFrontmatter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestImportFromRepo_WithoutEncodingStillRecordsPageType",
+      "kind": "function",
+      "file": "internal/scaffold/encode_test.go",
+      "start_line": 94,
+      "end_line": 117,
+      "signature": "func TestImportFromRepo_WithoutEncodingStillRecordsPageType(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestCitedFileFromOrigin",
+      "kind": "function",
+      "file": "internal/scaffold/encode_test.go",
+      "start_line": 119,
+      "end_line": 123,
+      "signature": "func TestCitedFileFromOrigin(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "ImportResult",
+      "kind": "type",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 18,
+      "end_line": 22,
+      "signature": "type ImportResult struct{...}",
+      "doc": "ImportResult summarizes a from-repo import or sync.",
+      "language": "go"
+    },
+    {
+      "name": "ImportFromRepo",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 37,
+      "end_line": 39,
+      "signature": "func ImportFromRepo(wikiRoot, repoPath string, repoName string) (ImportResult, error)",
+      "doc": "ImportFromRepo seeds the scaffolded wiki with markdown files lifted from\nrepoPath: top-level docs (README.md, CLAUDE.md, …) plus everything under\ndocs/. Each imported file is wrapped with frontmatter that satisfies\n`keeba lint`. Existing wiki pages are never overwritten.\n\nEquivalent to ImportFromRepoWithEncoding with an empty EncodingConfig\n(no per-page-type encoding applied).",
+      "language": "go"
+    },
+    {
+      "name": "ImportFromRepoWithEncoding",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 46,
+      "end_line": 126,
+      "signature": "func ImportFromRepoWithEncoding(wikiRoot, repoPath, repoName string, enc config.EncodingConfig) (ImportResult, error)",
+      "doc": "ImportFromRepoWithEncoding is ImportFromRepo plus an encoding pass: each\nimported page's body is run through the pipeline configured in cfg for\nthe page's detected type (function / entity / narrative). The page_type\nand encoding pipeline name are persisted in frontmatter so subsequent\n`keeba sync` runs can re-apply the same pipeline.",
+      "language": "go"
+    },
+    {
+      "name": "normalizeSlug",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 130,
+      "end_line": 139,
+      "signature": "func normalizeSlug(s string) string",
+      "language": "go"
+    },
+    {
+      "name": "writeImported",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 141,
+      "end_line": 160,
+      "signature": "func writeImported(wikiRoot, srcPath, slug, repoName, origin string, enc config.EncodingConfig, res *ImportResult) error",
+      "language": "go"
+    },
+    {
+      "name": "SyncFromRepo",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 177,
+      "end_line": 179,
+      "signature": "func SyncFromRepo(wikiRoot, repoPath, repoName string) (ImportResult, error)",
+      "doc": "SyncFromRepo refreshes the wiki from a source repo. Behaviour per file:\n\n  - destination doesn't exist → write (same as ImportFromRepo).\n  - destination exists and has frontmatter `keeba_pristine_hash` matching\n    the on-disk body's hash → pristine; safe to overwrite with the new\n    import.\n  - destination exists with no hash, or with a mismatched hash → user\n    touched it. Leave alone, return slug in Edited.\n\nIdempotent. Re-running on an unchanged source is a no-op (page bodies\nmatch the recorded hash, but the new wrapper output is byte-identical to\nwhat's on disk modulo last_verified, so the file still gets rewritten —\n`keeba meta --check` would no-op afterward).\n\nEquivalent to SyncFromRepoWithEncoding with an empty EncodingConfig.",
+      "language": "go"
+    },
+    {
+      "name": "SyncFromRepoWithEncoding",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 183,
+      "end_line": 254,
+      "signature": "func SyncFromRepoWithEncoding(wikiRoot, repoPath, repoName string, enc config.EncodingConfig) (ImportResult, error)",
+      "doc": "SyncFromRepoWithEncoding is SyncFromRepo plus the per-page-type\nencoding pass; matches ImportFromRepoWithEncoding's contract.",
+      "language": "go"
+    },
+    {
+      "name": "upsertImported",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 258,
+      "end_line": 290,
+      "signature": "func upsertImported(wikiRoot, srcPath, slug, repoName, origin string, enc config.EncodingConfig, res *ImportResult) error",
+      "doc": "upsertImported is the sync version of writeImported: pristine pages get\noverwritten; edited pages get skipped.",
+      "language": "go"
+    },
+    {
+      "name": "isPristineImport",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 296,
+      "end_line": 304,
+      "signature": "func isPristineImport(text string) bool",
+      "doc": "isPristineImport returns true when the page was created by a previous\nkeeba import and has not been hand-edited since: it must carry the\n`keeba_pristine_hash` frontmatter field, and the body's current hash must\nmatch that recorded value.",
+      "language": "go"
+    },
+    {
+      "name": "splitFrontmatter",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 310,
+      "end_line": 319,
+      "signature": "func splitFrontmatter(text string) (string, string)",
+      "doc": "splitFrontmatter returns (frontmatter-yaml, body). The body has any\nleading blank lines stripped so the same body string is reproducible\nwhether you build it pre-write or read it back post-write — important\nbecause keeba_pristine_hash compares against this canonical form.",
+      "language": "go"
+    },
+    {
+      "name": "readPristineHash",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 323,
+      "end_line": 329,
+      "signature": "func readPristineHash(fm string) string",
+      "language": "go"
+    },
+    {
+      "name": "bodyHash",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 332,
+      "end_line": 335,
+      "signature": "func bodyHash(body string) string",
+      "doc": "bodyHash returns the sha256 hex of body, used as keeba_pristine_hash.",
+      "language": "go"
+    },
+    {
+      "name": "wrapImported",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 347,
+      "end_line": 405,
+      "signature": "func wrapImported(body, repoName, origin string, enc config.EncodingConfig) string",
+      "doc": "wrapImported produces a keeba-lint-compliant page from an arbitrary\nmarkdown source. It always emits frontmatter → title → summary → body in\nthat order, and appends Sources/See Also if the source didn't have them.\n\nTo avoid duplicating the title, the body's own `# Title` line (if any) is\nstripped before being re-emitted under the canonical title.\n\nWhen enc has a pipeline configured for the page's detected type, the\nstripped body is run through the pipeline before being re-emitted, and\npage_type / encoding are recorded in frontmatter.",
+      "language": "go"
+    },
+    {
+      "name": "extractAndStripTitle",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 409,
+      "end_line": 425,
+      "signature": "func extractAndStripTitle(body string) (string, string)",
+      "doc": "extractAndStripTitle returns (title, body-without-that-title-line). If the\nbody has no `# Heading`, returns (\"\", body unchanged).",
+      "language": "go"
+    },
+    {
+      "name": "extractAndStripSummary",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 430,
+      "end_line": 453,
+      "signature": "func extractAndStripSummary(body string) (string, string)",
+      "doc": "extractAndStripSummary returns (summary, body-without-summary). Looks for\na `\u003e ` line within the first 5 non-empty lines and removes it from the\nbody so we can re-emit it in canonical position.",
+      "language": "go"
+    },
+    {
+      "name": "synthesizeSummary",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 457,
+      "end_line": 476,
+      "signature": "func synthesizeSummary(body string) string",
+      "doc": "synthesizeSummary picks a one-line summary from the first prose paragraph\nof body. Returns \"\" when the body has no usable prose.",
+      "language": "go"
+    },
+    {
+      "name": "stripIncomingFrontmatter",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 478,
+      "end_line": 487,
+      "signature": "func stripIncomingFrontmatter(body string) string",
+      "language": "go"
+    },
+    {
+      "name": "humanizeOrigin",
+      "kind": "function",
+      "file": "internal/scaffold/importer.go",
+      "start_line": 489,
+      "end_line": 498,
+      "signature": "func humanizeOrigin(origin string) string",
+      "language": "go"
+    },
+    {
+      "name": "writeFile",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 10,
+      "end_line": 18,
+      "signature": "func writeFile(t *testing.T, p, body string)",
+      "language": "go"
+    },
+    {
+      "name": "TestImportFromRepoBasics",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 20,
+      "end_line": 60,
+      "signature": "func TestImportFromRepoBasics(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestImportSkipsExistingFiles",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 62,
+      "end_line": 77,
+      "signature": "func TestImportSkipsExistingFiles(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestImportStripsIncomingFrontmatter",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 79,
+      "end_line": 98,
+      "signature": "func TestImportStripsIncomingFrontmatter(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestImportSummaryFallback",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 100,
+      "end_line": 111,
+      "signature": "func TestImportSummaryFallback(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestImportNonexistentRepoErrors",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 113,
+      "end_line": 117,
+      "signature": "func TestImportNonexistentRepoErrors(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestImportPageWithBodyTitleProducesLintCleanOutput",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 123,
+      "end_line": 148,
+      "signature": "func TestImportPageWithBodyTitleProducesLintCleanOutput(t *testing.T)",
+      "doc": "TestImportPageWithBodyTitleProducesLintCleanOutput pins the v0.3.0-alpha\nregression: when the source had its own `# Title`, the wrapper produced\n`\u003e summary\\n# Title` (summary before title), which fails the lint title\ncheck. The fix must always emit `# Title\\n\u003e summary\\n…body`.",
+      "language": "go"
+    },
+    {
+      "name": "TestImportWalksSingularDocDir",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 150,
+      "end_line": 160,
+      "signature": "func TestImportWalksSingularDocDir(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestImportWalksNestedReadmes",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 162,
+      "end_line": 172,
+      "signature": "func TestImportWalksNestedReadmes(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSyncRefreshesPristinePages",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 176,
+      "end_line": 201,
+      "signature": "func TestSyncRefreshesPristinePages(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSyncPreservesEditedPages",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 203,
+      "end_line": 230,
+      "signature": "func TestSyncPreservesEditedPages(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSyncImportsNewSourceFiles",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 232,
+      "end_line": 253,
+      "signature": "func TestSyncImportsNewSourceFiles(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSyncSkipsManualPages",
+      "kind": "function",
+      "file": "internal/scaffold/importer_test.go",
+      "start_line": 255,
+      "end_line": 274,
+      "signature": "func TestSyncSkipsManualPages(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Vars",
+      "kind": "type",
+      "file": "internal/scaffold/scaffold.go",
+      "start_line": 24,
+      "end_line": 29,
+      "signature": "type Vars struct{...}",
+      "doc": "Vars are the substitution variables exposed to every template.",
+      "language": "go"
+    },
+    {
+      "name": "Defaults",
+      "kind": "function",
+      "file": "internal/scaffold/scaffold.go",
+      "start_line": 32,
+      "end_line": 39,
+      "signature": "func Defaults(name string) Vars",
+      "doc": "Defaults returns Vars with today's date and sensible defaults.",
+      "language": "go"
+    },
+    {
+      "name": "Scaffold",
+      "kind": "function",
+      "file": "internal/scaffold/scaffold.go",
+      "start_line": 45,
+      "end_line": 89,
+      "signature": "func Scaffold(outDir string, v Vars, force bool) error",
+      "doc": "Scaffold writes the wiki tree at outDir using the given variables.\n\noutDir must not exist or must be empty (unless force is true). Files are\nwritten with 0o644 / dirs 0o755.",
+      "language": "go"
+    },
+    {
+      "name": "preflight",
+      "kind": "function",
+      "file": "internal/scaffold/scaffold.go",
+      "start_line": 91,
+      "end_line": 110,
+      "signature": "func preflight(outDir string, force bool) error",
+      "language": "go"
+    },
+    {
+      "name": "TestScaffoldFreshDir",
+      "kind": "function",
+      "file": "internal/scaffold/scaffold_test.go",
+      "start_line": 10,
+      "end_line": 56,
+      "signature": "func TestScaffoldFreshDir(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestScaffoldRefusesNonEmptyDir",
+      "kind": "function",
+      "file": "internal/scaffold/scaffold_test.go",
+      "start_line": 58,
+      "end_line": 70,
+      "signature": "func TestScaffoldRefusesNonEmptyDir(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestScaffoldForceOverwrites",
+      "kind": "function",
+      "file": "internal/scaffold/scaffold_test.go",
+      "start_line": 72,
+      "end_line": 83,
+      "signature": "func TestScaffoldForceOverwrites(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Doc",
+      "kind": "type",
+      "file": "internal/search/search.go",
+      "start_line": 27,
+      "end_line": 34,
+      "signature": "type Doc struct{...}",
+      "doc": "Doc is a single page in the corpus.",
+      "language": "go"
+    },
+    {
+      "name": "Hit",
+      "kind": "type",
+      "file": "internal/search/search.go",
+      "start_line": 37,
+      "end_line": 43,
+      "signature": "type Hit struct{...}",
+      "doc": "Hit is a single ranked search result.",
+      "language": "go"
+    },
+    {
+      "name": "Index",
+      "kind": "type",
+      "file": "internal/search/search.go",
+      "start_line": 46,
+      "end_line": 51,
+      "signature": "type Index struct{...}",
+      "doc": "Index is an in-memory BM25 index.",
+      "language": "go"
+    },
+    {
+      "name": "Build",
+      "kind": "function",
+      "file": "internal/search/search.go",
+      "start_line": 55,
+      "end_line": 93,
+      "signature": "func Build(cfg config.KeebaConfig) (*Index, error)",
+      "doc": "Build scans the wiki and constructs an in-memory BM25 index over every\nlinted page (skip rules from cfg.Lint apply).",
+      "language": "go"
+    },
+    {
+      "name": "N",
+      "kind": "method",
+      "file": "internal/search/search.go",
+      "start_line": 96,
+      "end_line": 96,
+      "signature": "func (*Index) N() int",
+      "doc": "N returns the number of indexed documents.",
+      "receiver": "Index",
+      "language": "go"
+    },
+    {
+      "name": "Query",
+      "kind": "method",
+      "file": "internal/search/search.go",
+      "start_line": 100,
+      "end_line": 144,
+      "signature": "func (*Index) Query(q string, k int) []Hit",
+      "doc": "Query returns the top-k hits for a free-text query. An empty result slice\n(not error) means no documents matched.",
+      "receiver": "Index",
+      "language": "go"
+    },
+    {
+      "name": "readPageBody",
+      "kind": "function",
+      "file": "internal/search/search.go",
+      "start_line": 147,
+      "end_line": 153,
+      "signature": "func readPageBody(path string) (string, error)",
+      "doc": "readPageBody returns the file's contents as a string.",
+      "language": "go"
+    },
+    {
+      "name": "extractTitle",
+      "kind": "function",
+      "file": "internal/search/search.go",
+      "start_line": 156,
+      "end_line": 164,
+      "signature": "func extractTitle(body string) string",
+      "doc": "extractTitle returns the first `# Heading` line content, or \"\".",
+      "language": "go"
+    },
+    {
+      "name": "snippet",
+      "kind": "function",
+      "file": "internal/search/search.go",
+      "start_line": 167,
+      "end_line": 197,
+      "signature": "func snippet(body string, terms []string) string",
+      "doc": "snippet finds a 200-char window around the first matching term.",
+      "language": "go"
+    },
+    {
+      "name": "firstSnippet",
+      "kind": "function",
+      "file": "internal/search/search.go",
+      "start_line": 199,
+      "end_line": 205,
+      "signature": "func firstSnippet(body string, n int) string",
+      "language": "go"
+    },
+    {
+      "name": "TestTokenize",
+      "kind": "function",
+      "file": "internal/search/search_test.go",
+      "start_line": 13,
+      "end_line": 34,
+      "signature": "func TestTokenize(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "writeFile",
+      "kind": "function",
+      "file": "internal/search/search_test.go",
+      "start_line": 36,
+      "end_line": 44,
+      "signature": "func writeFile(t *testing.T, path, contents string)",
+      "language": "go"
+    },
+    {
+      "name": "corpus",
+      "kind": "function",
+      "file": "internal/search/search_test.go",
+      "start_line": 48,
+      "end_line": 59,
+      "signature": "func corpus(t *testing.T) config.KeebaConfig",
+      "language": "go"
+    },
+    {
+      "name": "TestBuildIndex",
+      "kind": "function",
+      "file": "internal/search/search_test.go",
+      "start_line": 61,
+      "end_line": 69,
+      "signature": "func TestBuildIndex(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestQueryRanksRelevantFirst",
+      "kind": "function",
+      "file": "internal/search/search_test.go",
+      "start_line": 71,
+      "end_line": 83,
+      "signature": "func TestQueryRanksRelevantFirst(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestQueryReturnsEmptyForNoMatch",
+      "kind": "function",
+      "file": "internal/search/search_test.go",
+      "start_line": 85,
+      "end_line": 94,
+      "signature": "func TestQueryReturnsEmptyForNoMatch(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestQueryRespectsTopK",
+      "kind": "function",
+      "file": "internal/search/search_test.go",
+      "start_line": 96,
+      "end_line": 105,
+      "signature": "func TestQueryRespectsTopK(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestSnippetIncludesQueryTerm",
+      "kind": "function",
+      "file": "internal/search/search_test.go",
+      "start_line": 107,
+      "end_line": 119,
+      "signature": "func TestSnippetIncludesQueryTerm(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "TestQueryEmptyIndex",
+      "kind": "function",
+      "file": "internal/search/search_test.go",
+      "start_line": 121,
+      "end_line": 134,
+      "signature": "func TestQueryEmptyIndex(t *testing.T)",
+      "language": "go"
+    },
+    {
+      "name": "Tokenize",
+      "kind": "function",
+      "file": "internal/search/tokenize.go",
+      "start_line": 25,
+      "end_line": 44,
+      "signature": "func Tokenize(text string) []string",
+      "doc": "Tokenize lowercases the input, splits on non-letter/digit runs, drops\nstopwords + tokens shorter than 2 chars, and returns the survivors. Pure\nstdlib; no stemming in v0.1 to keep the index deterministic and tiny.",
+      "language": "go"
+    },
+    {
+      "name": "VectorStorePath",
+      "kind": "const",
+      "file": "internal/search/vector.go",
+      "start_line": 16,
+      "end_line": 16,
+      "signature": "const VectorStorePath",
+      "doc": "VectorStorePath returns where keeba persists the embed store, relative to\nthe wiki root.",
+      "language": "go"
+    },
+    {
+      "name": "gatherChunks",
+      "kind": "function",
+      "file": "internal/search/vector.go",
+      "start_line": 21,
+      "end_line": 47,
+      "signature": "func gatherChunks(cfg config.KeebaConfig) ([]embed.Entry, error)",
+      "doc": "gatherChunks reads the wiki and returns one embed.Entry per indexable\npage. v0.2 uses one chunk per page (whole body); v0.3 will chunk by\nsection so larger pages produce finer-grained matches.",
+      "language": "go"
+    },
+    {
+      "name": "IndexAndPersist",
+      "kind": "function",
+      "file": "internal/search/vector.go",
+      "start_line": 51,
+      "end_line": 62,
+      "signature": "func IndexAndPersist(ctx context.Context, cfg config.KeebaConfig, emb embed.Embedder) (int, error)",
+      "doc": "IndexAndPersist embeds every page in the wiki and writes the result to\n`\u003cwiki\u003e/.keeba-cache/vectors.gob`.",
+      "language": "go"
+    },
+    {
+      "name": "VectorQuery",
+      "kind": "function",
+      "file": "internal/search/vector.go",
+      "start_line": 66,
+      "end_line": 96,
+      "signature": "func VectorQuery(ctx context.Context, cfg config.KeebaConfig, emb embed.Embedder, q string, k int) ([]Hit, error)",
+      "doc": "VectorQuery embeds the query, loads the persisted store, and returns\ntop-k results.",
+      "language": "go"
+    },
+    {
+      "name": "goExtractor",
+      "kind": "type",
+      "file": "internal/symbol/extract_go.go",
+      "start_line": 13,
+      "end_line": 13,
+      "signature": "type goExtractor struct{...}",
+      "doc": "goExtractor uses go/parser for accurate Go symbol extraction.\nCaptures: package-level funcs, methods (with receiver), type decls,\ninterface decls, and exported vars/consts.",
+      "language": "go"
+    },
+    {
+      "name": "Extract",
+      "kind": "method",
+      "file": "internal/symbol/extract_go.go",
+      "start_line": 15,
+      "end_line": 32,
+      "signature": "func (goExtractor) Extract(file string, src []byte) ([]Symbol, error)",
+      "receiver": "goExtractor",
+      "language": "go"
+    },
+    {
+      "name": "goFuncSymbol",
+      "kind": "function",
+      "file": "internal/symbol/extract_go.go",
+      "start_line": 34,
+      "end_line": 58,
+      "signature": "func goFuncSymbol(file string, fset *token.FileSet, d *ast.FuncDecl) Symbol",
+      "language": "go"
+    },
+    {
+      "name": "goReceiverTypeName",
+      "kind": "function",
+      "file": "internal/symbol/extract_go.go",
+      "start_line": 62,
+      "end_line": 76,
+      "signature": "func goReceiverTypeName(expr ast.Expr) string",
+      "doc": "goReceiverTypeName extracts \"Server\" from `(*Server)` or `(s *Server)`\nor `(s Server)` — handles pointer and value receivers and generics.",
+      "language": "go"
+    },
+    {
+      "name": "goFuncSignature",
+      "kind": "function",
+      "file": "internal/symbol/extract_go.go",
+      "start_line": 79,
+      "end_line": 97,
+      "signature": "func goFuncSignature(_ string, fset *token.FileSet, d *ast.FuncDecl) string",
+      "doc": "goFuncSignature returns the `func ...` opening line trimmed.",
+      "language": "go"
+    },
+    {
+      "name": "goFuncSignatureFromAST",
+      "kind": "function",
+      "file": "internal/symbol/extract_go.go",
+      "start_line": 102,
+      "end_line": 158,
+      "signature": "func goFuncSignatureFromAST(d *ast.FuncDecl) string",
+      "doc": "goFuncSignatureFromAST reconstructs a \"func [Recv] Name(args) returns\"\nline without invoking go/format (avoids the import cycle and saves\nbytes vs running format on each function).",
+      "language": "go"
+    },
+    {
+      "name": "goExprString",
+      "kind": "function",
+      "file": "internal/symbol/extract_go.go",
+      "start_line": 163,
+      "end_line": 195,
+      "signature": "func goExprString(e ast.Expr) string",
+      "doc": "goExprString is a small AST→string formatter for the type fragments\nthat appear in signatures. Handles the common cases; fall through to a\nplaceholder for exotic shapes.",
+      "language": "go"
+    },
+    {
+      "name": "goGenSymbols",
+      "kind": "function",
+      "file": "internal/symbol/extract_go.go",
+      "start_line": 197,
+      "end_line": 244,
+      "signature": "func goGenSymbols(file string, fset *token.FileSet, d *ast.GenDecl) []Symbol",
+      "language": "go"
+    },
+    {
+      "name": "goDocText",
+      "kind": "function",
+      "file": "internal/symbol/extract_go.go",
+      "start_line": 246,
+      "end_line": 251,
+      "signature": "func goDocText(g *ast.CommentGroup) string",
+      "language": "go"
+    },
+    {
+      "name": "regexPattern",
+      "kind": "type",
+      "file": "internal/symbol/extract_regex.go",
+      "start_line": 12,
+      "end_line": 15,
+      "signature": "type regexPattern struct{...}",
+      "doc": "regexPattern describes one symbol shape: a compiled regex with named\ngroups (`name`, `recv`) plus the kind label and an optional language\noverride (the `extends` shapes write more specific kinds than the\ngeneric Extractor.lang).",
+      "language": "go"
+    },
+    {
+      "name": "regexExtractor",
+      "kind": "type",
+      "file": "internal/symbol/extract_regex.go",
+      "start_line": 19,
+      "end_line": 22,
+      "signature": "type regexExtractor struct{...}",
+      "doc": "regexExtractor runs a slice of patterns over the source. Patterns are\nlanguage-specific; the extractor's `lang` field stamps Symbol.Language.",
+      "language": "go"
+    },
+    {
+      "name": "Extract",
+      "kind": "method",
+      "file": "internal/symbol/extract_regex.go",
+      "start_line": 24,
+      "end_line": 80,
+      "signature": "func (regexExtractor) Extract(file string, src []byte) ([]Symbol, error)",
+      "receiver": "regexExtractor",
+      "language": "go"
+    },
+    {
+      "name": "submatchStr",
+      "kind": "function",
+      "file": "internal/symbol/extract_regex.go",
+      "start_line": 82,
+      "end_line": 88,
+      "signature": "func submatchStr(src []byte, m []int, re *regexp.Regexp, group string) string",
+      "language": "go"
+    },
+    {
+      "name": "estimateEndLine",
+      "kind": "function",
+      "file": "internal/symbol/extract_regex.go",
+      "start_line": 93,
+      "end_line": 121,
+      "signature": "func estimateEndLine(lines []string, start int) int",
+      "doc": "estimateEndLine walks forward from start until it sees two consecutive\nblank lines, an EOF, or a less-indented sibling line. Heuristic — fine\nfor \"find_def\" use cases that just need a small chunk of context.",
+      "language": "go"
+    },
+    {
+      "name": "leadingSpace",
+      "kind": "function",
+      "file": "internal/symbol/extract_regex.go",
+      "start_line": 123,
+      "end_line": 133,
+      "signature": "func leadingSpace(s string) int",
+      "language": "go"
+    },
+    {
+      "name": "Symbol",
+      "kind": "type",
+      "file": "internal/symbol/extractor.go",
+      "start_line": 23,
+      "end_line": 46,
+      "signature": "type Symbol struct{...}",
+      "doc": "Symbol is one extracted definition: function, class, method, type, etc.\nStable JSON shape so .keeba/symbols.json is consumed by the MCP layer\nand other tooling without re-parsing.",
+      "language": "go"
+    },
+    {
+      "name": "Extractor",
+      "kind": "interface",
+      "file": "internal/symbol/extractor.go",
+      "start_line": 49,
+      "end_line": 53,
+      "signature": "type Extractor interface{...}",
+      "doc": "Extractor is the language-specific extractor contract.",
+      "language": "go"
+    },
+    {
+      "name": "init",
+      "kind": "function",
+      "file": "internal/symbol/extractor.go",
+      "start_line": 59,
+      "end_line": 66,
+      "signature": "func init()",
+      "language": "go"
+    },
+    {
+      "name": "detectLanguage",
+      "kind": "function",
+      "file": "internal/symbol/extractor.go",
+      "start_line": 68,
+      "end_line": 94,
+      "signature": "func detectLanguage(file string) string",
+      "language": "go"
+    },
+    {
+      "name": "extractFile",
+      "kind": "function",
+      "file": "internal/symbol/extractor.go",
+      "start_line": 98,
+      "end_line": 105,
+      "signature": "func extractFile(path string, src []byte) ([]Symbol, error)",
+      "doc": "extractFile dispatches one file to its language extractor. Returns\nnil, nil for unsupported languages so callers can ignore unknown files.",
+      "language": "go"
+    },
+    {
+      "name": "ExtractRepo",
+      "kind": "function",
+      "file": "internal/symbol/extractor.go",
+      "start_line": 111,
+      "end_line": 159,
+      "signature": "func ExtractRepo(repoRoot string) ([]Symbol, error)",
+      "doc": "ExtractRepo walks repoRoot and returns every symbol in every supported\nfile. Hidden directories (.git, .venv) and big-binary directories\n(node_modules, vendor, target, dist, build) are skipped. Files larger\nthan 1 MiB are skipped to keep extraction fast on huge files.",
+      "language": "go"
+    },
+    {
+      "name": "IndexDir",
+      "kind": "const",
+      "file": "internal/symbol/store.go",
+      "start_line": 15,
+      "end_line": 15,
+      "signature": "const IndexDir",
+      "language": "go"
+    },
+    {
+      "name": "SymbolsFile",
+      "kind": "const",
+      "file": "internal/symbol/store.go",
+      "start_line": 19,
+      "end_line": 19,
+      "signature": "const SymbolsFile",
+      "language": "go"
+    },
+    {
+      "name": "Index",
+      "kind": "type",
+      "file": "internal/symbol/store.go",
+      "start_line": 24,
+      "end_line": 31,
+      "signature": "type Index struct{...}",
+      "doc": "Index is the on-disk format. Wraps the symbol list with a small header\nso future versions can bump the schema without breaking parse.",
+      "language": "go"
+    },
+    {
+      "name": "IndexPath",
+      "kind": "function",
+      "file": "internal/symbol/store.go",
+      "start_line": 35,
+      "end_line": 37,
+      "signature": "func IndexPath(targetDir string) string",
+      "doc": "IndexPath returns the canonical .keeba/symbols.json path for the\ngiven target directory.",
+      "language": "go"
+    },
+    {
+      "name": "Save",
+      "kind": "function",
+      "file": "internal/symbol/store.go",
+      "start_line": 41,
+      "end_line": 51,
+      "signature": "func Save(targetDir string, idx Index) error",
+      "doc": "Save writes idx to .keeba/symbols.json under targetDir, creating the\ndirectory if needed. Output is pretty-printed for `git diff`-ability.",
+      "language": "go"
+    },
+    {
+      "name": "Load",
+      "kind": "function",
+      "file": "internal/symbol/store.go",
+      "start_line": 56,
+      "end_line": 67,
+      "signature": "func Load(targetDir string) (Index, error)",
+      "doc": "Load reads .keeba/symbols.json. Returns an os.IsNotExist-classifiable\nerror if the file is missing — callers can use that to suggest\n`keeba compile`.",
+      "language": "go"
+    },
+    {
+      "name": "Compile",
+      "kind": "function",
+      "file": "internal/symbol/store.go",
+      "start_line": 73,
+      "end_line": 100,
+      "signature": "func Compile(repoRoot, writeRoot string) (Index, error)",
+      "doc": "Compile is the high-level entry point: walk repoRoot, extract every\nsymbol, and write the index under writeRoot/.keeba/symbols.json.\nrepoRoot and writeRoot are usually the same for `keeba compile \u003crepo\u003e`,\nbut can differ when compiling a source repo into a wiki dir.",
+      "language": "go"
+    },
+    {
+      "name": "CountByLanguage",
+      "kind": "method",
+      "file": "internal/symbol/store.go",
+      "start_line": 104,
+      "end_line": 110,
+      "signature": "func (Index) CountByLanguage() map[string]int",
+      "doc": "CountByLanguage tallies symbols per language tag — used by the CLI to\nprint a per-language breakdown after compile.",
+      "receiver": "Index",
+      "language": "go"
+    },
+    {
+      "name": "CountByKind",
+      "kind": "method",
+      "file": "internal/symbol/store.go",
+      "start_line": 113,
+      "end_line": 119,
+      "signature": "func (Index) CountByKind() map[string]int",
+      "doc": "CountByKind tallies symbols per kind (function, method, class, …).",
+      "receiver": "Index",
+      "language": "go"
+    }
+  ]
+}
