@@ -49,6 +49,44 @@ func truncate(s string, n int) string {
 	return s[:n-1] + "…"
 }
 
+// MarkdownEncodingGridByType renders a TypedGridReport showing the
+// per-page-type winner and side-by-side compression numbers.
+func MarkdownEncodingGridByType(r TypedGridReport) string {
+	var sb strings.Builder
+	fmt.Fprintln(&sb, "## Encoding grid by page-type")
+	fmt.Fprintln(&sb)
+	if len(r.Types) == 0 {
+		fmt.Fprintln(&sb, "_(no pages found in the wiki)_")
+		return sb.String()
+	}
+	for _, pt := range pageTypeOrder {
+		grid, ok := r.Types[pt]
+		if !ok {
+			continue
+		}
+		count := r.PageCounts[pt]
+		fmt.Fprintf(&sb, "### %s pages (%d)\n\n", pt, count)
+		if grid.Recommended != "" {
+			fmt.Fprintf(&sb, "Winner: **`%s`** (%.2f× compression)\n\n", grid.Recommended, grid.BestRatio)
+		} else {
+			fmt.Fprintln(&sb, "_(no pipeline cleared the 4.5× quality cap)_")
+			fmt.Fprintln(&sb)
+		}
+		fmt.Fprintln(&sb, "| Pipeline | Compression | Total raw | Total enc |")
+		fmt.Fprintln(&sb, "|---|---|---|---|")
+		for _, p := range grid.Reports {
+			marker := ""
+			if p.Pipeline == grid.Recommended {
+				marker = " ⭐"
+			}
+			fmt.Fprintf(&sb, "| `%s`%s | %.2f× | %d | %d |\n",
+				p.Pipeline, marker, p.Ratio(), p.TotalRaw, p.TotalEnc)
+		}
+		fmt.Fprintln(&sb)
+	}
+	return sb.String()
+}
+
 // MarkdownEncodingGrid renders a GridReport as a markdown section
 // summarizing every candidate pipeline + the recommendation.
 func MarkdownEncodingGrid(r GridReport) string {

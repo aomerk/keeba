@@ -16,14 +16,15 @@ import (
 
 func newBenchCmd() *cobra.Command {
 	var (
-		questionsFile string
-		rawPaths      []string
-		topK          int
-		out           string
-		llmProvider   string
-		maxRawChars   int
-		encodingSpec  string
-		encodingGrid  bool
+		questionsFile      string
+		rawPaths           []string
+		topK               int
+		out                string
+		llmProvider        string
+		maxRawChars        int
+		encodingSpec       string
+		encodingGrid       bool
+		encodingGridByType bool
 	)
 	cmd := &cobra.Command{
 		Use:   "bench",
@@ -78,6 +79,15 @@ ANTHROPIC_API_KEY to be set.`,
 				md += "\n" + bench.MarkdownEncodingGrid(gridRep)
 			}
 
+			var typedGrid bench.TypedGridReport
+			if encodingGridByType {
+				typedGrid, err = bench.RunEncodingGridByType(cfg)
+				if err != nil {
+					return fmt.Errorf("bench --encoding-grid-by-type: %w", err)
+				}
+				md += "\n" + bench.MarkdownEncodingGridByType(typedGrid)
+			}
+
 			if out == "" {
 				out = filepath.Join(cfg.WikiRoot, "_bench",
 					rep.When.Format("2006-01-02-1504")+".md")
@@ -104,6 +114,24 @@ ANTHROPIC_API_KEY to be set.`,
 						"keeba: encoding-grid — no pipeline cleared the 4.5× quality cap")
 				}
 			}
+			if encodingGridByType && len(typedGrid.Types) > 0 {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "keeba: encoding-grid-by-type winners:")
+				for _, pt := range []bench.PageType{bench.PageTypeFunction, bench.PageTypeEntity, bench.PageTypeNarrative} {
+					grid, ok := typedGrid.Types[pt]
+					if !ok {
+						continue
+					}
+					if grid.Recommended != "" {
+						_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+							"  %-10s (%d pages): %s — %.2f×\n",
+							pt, typedGrid.PageCounts[pt], grid.Recommended, grid.BestRatio)
+					} else {
+						_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+							"  %-10s (%d pages): no winner under cap\n",
+							pt, typedGrid.PageCounts[pt])
+					}
+				}
+			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", rel)
 			return nil
 		},
@@ -119,6 +147,8 @@ ANTHROPIC_API_KEY to be set.`,
 			"Reports per-page compression after the standard wiki-vs-raw run.")
 	cmd.Flags().BoolVar(&encodingGrid, "encoding-grid", false,
 		"run every candidate encoding pipeline and report the winner (respects the 4× quality cliff per plan §10).")
+	cmd.Flags().BoolVar(&encodingGridByType, "encoding-grid-by-type", false,
+		"partition wiki pages by detected page-type (function / entity / narrative) and run the grid per partition.")
 	return cmd
 }
 
