@@ -27,6 +27,17 @@ func newMCPCmd() *cobra.Command {
 				return err
 			}
 			srv.Version = Version
+
+			// Start the live-symbol watcher in the background when a
+			// graph is loaded. Edits to any indexed file re-extract that
+			// file in <50ms, so find_def / read_chunk responses stay
+			// accurate even while Claude Code (or the user's IDE) is
+			// rewriting the source under the agent's feet.
+			if li := srv.LiveIndex(); li != nil {
+				go func() { _ = li.Run(cmd.Context()) }()
+				defer func() { _ = li.Close() }()
+			}
+
 			err = srv.Serve(cmd.Context(), os.Stdin, os.Stdout)
 			// Receipt — visible in the agent's MCP server log even if
 			// the agent never calls session_stats explicitly. This is
