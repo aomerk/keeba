@@ -28,3 +28,4 @@ coverage.html
 # keeba runtime artifacts
 .keeba-cache/
 *.kbdb
+.keeba/
