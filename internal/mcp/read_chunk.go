@@ -80,6 +80,30 @@ func (s *Server) toolReadChunk(raw json.RawMessage) rpcResponse {
 	}}
 }
 
+// readChunkAlternative returns the size of the file the agent would
+// have pulled if it had read the whole thing instead of just a chunk.
+// Drives SessionStats.BytesAlternative — the honest "you saved N bytes"
+// receipt. Returns 0 if the file isn't readable; the receipt still works
+// (just doesn't claim a saving for that call).
+func readChunkAlternative(root string, raw json.RawMessage) int {
+	var a readChunkArgs
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return 0
+	}
+	if strings.TrimSpace(a.File) == "" {
+		return 0
+	}
+	abs, err := safeJoin(root, a.File)
+	if err != nil {
+		return 0
+	}
+	info, err := os.Stat(abs)
+	if err != nil {
+		return 0
+	}
+	return int(info.Size())
+}
+
 // safeJoin resolves rel against root and rejects any path that escapes
 // root (defense against ../../../etc/passwd-style traversal). Returns
 // the absolute, cleaned path on success.
