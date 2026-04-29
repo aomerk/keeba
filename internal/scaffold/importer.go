@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/aomerk/keeba/internal/config"
 )
 
 // ImportResult summarizes a from-repo import or sync.
@@ -29,7 +31,19 @@ var topLevelImports = []string{
 // repoPath: top-level docs (README.md, CLAUDE.md, …) plus everything under
 // docs/. Each imported file is wrapped with frontmatter that satisfies
 // `keeba lint`. Existing wiki pages are never overwritten.
+//
+// Equivalent to ImportFromRepoWithEncoding with an empty EncodingConfig
+// (no per-page-type encoding applied).
 func ImportFromRepo(wikiRoot, repoPath string, repoName string) (ImportResult, error) {
+	return ImportFromRepoWithEncoding(wikiRoot, repoPath, repoName, config.EncodingConfig{})
+}
+
+// ImportFromRepoWithEncoding is ImportFromRepo plus an encoding pass: each
+// imported page's body is run through the pipeline configured in cfg for
+// the page's detected type (function / entity / narrative). The page_type
+// and encoding pipeline name are persisted in frontmatter so subsequent
+// `keeba sync` runs can re-apply the same pipeline.
+func ImportFromRepoWithEncoding(wikiRoot, repoPath, repoName string, enc config.EncodingConfig) (ImportResult, error) {
 	res := ImportResult{}
 	repoAbs, err := filepath.Abs(repoPath)
 	if err != nil {
@@ -49,7 +63,7 @@ func ImportFromRepo(wikiRoot, repoPath string, repoName string) (ImportResult, e
 			continue
 		}
 		slug := normalizeSlug(strings.TrimSuffix(strings.ToLower(name), ".md"))
-		if err := writeImported(wikiRoot, src, slug, repoName, name, &res); err != nil {
+		if err := writeImported(wikiRoot, src, slug, repoName, name, enc, &res); err != nil {
 			return res, err
 		}
 	}
@@ -76,7 +90,7 @@ func ImportFromRepo(wikiRoot, repoPath string, repoName string) (ImportResult, e
 			rel = filepath.ToSlash(strings.TrimSuffix(rel, ".md"))
 			slug := normalizeSlug(dirName + "-" + strings.ReplaceAll(rel, "/", "-"))
 			origin := dirName + "/" + rel + ".md"
-			return writeImported(wikiRoot, path, slug, repoName, origin, &res)
+			return writeImported(wikiRoot, path, slug, repoName, origin, enc, &res)
 		})
 		if err != nil {
 			return res, err
@@ -104,7 +118,7 @@ func ImportFromRepo(wikiRoot, repoPath string, repoName string) (ImportResult, e
 		}
 		slug := normalizeSlug(name + "-readme")
 		origin := name + "/README.md"
-		if err := writeImported(wikiRoot, nested, slug, repoName, origin, &res); err != nil {
+		if err := writeImported(wikiRoot, nested, slug, repoName, origin, enc, &res); err != nil {
 			return res, err
 		}
 	}
@@ -124,7 +138,7 @@ func normalizeSlug(s string) string {
 	return s
 }
 
-func writeImported(wikiRoot, srcPath, slug, repoName, origin string, res *ImportResult) error {
+func writeImported(wikiRoot, srcPath, slug, repoName, origin string, enc config.EncodingConfig, res *ImportResult) error {
 	dest := filepath.Join(wikiRoot, "concepts", slug+".md")
 	if _, err := os.Stat(dest); err == nil {
 		res.Skipped = append(res.Skipped, "concepts/"+slug+".md")
@@ -134,7 +148,7 @@ func writeImported(wikiRoot, srcPath, slug, repoName, origin string, res *Import
 	if err != nil {
 		return fmt.Errorf("read %s: %w", srcPath, err)
 	}
-	wrapped := wrapImported(string(body), repoName, origin)
+	wrapped := wrapImported(string(body), repoName, origin, enc)
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		return err
 	}
@@ -158,7 +172,15 @@ func writeImported(wikiRoot, srcPath, slug, repoName, origin string, res *Import
 // match the recorded hash, but the new wrapper output is byte-identical to
 // what's on disk modulo last_verified, so the file still gets rewritten —
 // `keeba meta --check` would no-op afterward).
+//
+// Equivalent to SyncFromRepoWithEncoding with an empty EncodingConfig.
 func SyncFromRepo(wikiRoot, repoPath, repoName string) (ImportResult, error) {
+	return SyncFromRepoWithEncoding(wikiRoot, repoPath, repoName, config.EncodingConfig{})
+}
+
+// SyncFromRepoWithEncoding is SyncFromRepo plus the per-page-type
+// encoding pass; matches ImportFromRepoWithEncoding's contract.
+func SyncFromRepoWithEncoding(wikiRoot, repoPath, repoName string, enc config.EncodingConfig) (ImportResult, error) {
 	res := ImportResult{}
 	repoAbs, err := filepath.Abs(repoPath)
 	if err != nil {
@@ -172,7 +194,7 @@ func SyncFromRepo(wikiRoot, repoPath, repoName string) (ImportResult, error) {
 	}
 
 	walk := func(srcPath, slug, origin string) error {
-		return upsertImported(wikiRoot, srcPath, slug, repoName, origin, &res)
+		return upsertImported(wikiRoot, srcPath, slug, repoName, origin, enc, &res)
 	}
 
 	for _, name := range topLevelImports {
@@ -233,13 +255,13 @@ func SyncFromRepo(wikiRoot, repoPath, repoName string) (ImportResult, error) {
 
 // upsertImported is the sync version of writeImported: pristine pages get
 // overwritten; edited pages get skipped.
-func upsertImported(wikiRoot, srcPath, slug, repoName, origin string, res *ImportResult) error {
+func upsertImported(wikiRoot, srcPath, slug, repoName, origin string, enc config.EncodingConfig, res *ImportResult) error {
 	dest := filepath.Join(wikiRoot, "concepts", slug+".md")
 	srcBody, err := os.ReadFile(srcPath) //nolint:gosec
 	if err != nil {
 		return fmt.Errorf("read %s: %w", srcPath, err)
 	}
-	newWrapped := wrapImported(string(srcBody), repoName, origin)
+	newWrapped := wrapImported(string(srcBody), repoName, origin, enc)
 
 	existing, err := os.ReadFile(dest) //nolint:gosec
 	if err != nil {
@@ -318,7 +340,11 @@ func bodyHash(body string) string {
 //
 // To avoid duplicating the title, the body's own `# Title` line (if any) is
 // stripped before being re-emitted under the canonical title.
-func wrapImported(body, repoName, origin string) string {
+//
+// When enc has a pipeline configured for the page's detected type, the
+// stripped body is run through the pipeline before being re-emitted, and
+// page_type / encoding are recorded in frontmatter.
+func wrapImported(body, repoName, origin string, enc config.EncodingConfig) string {
 	body = stripIncomingFrontmatter(body)
 
 	title, bodyAfterTitle := extractAndStripTitle(body)
@@ -335,6 +361,12 @@ func wrapImported(body, repoName, origin string) string {
 	if summary == "" {
 		summary = fmt.Sprintf("Imported from %s/%s — review and edit", repoName, origin)
 	}
+
+	// Apply per-page-type encoding to the post-summary body. The detector
+	// inspects the cited file's extension and the body shape; pipeline
+	// failure degrades to "no encoding applied" rather than aborting ingest.
+	encResult := applyEncoding(bodyAfterSummary, []string{citedFileFromOrigin(repoName, origin)}, enc)
+	bodyAfterSummary = encResult.Body
 
 	hasSources := regexp.MustCompile(`(?m)^## Sources\b`).MatchString(bodyAfterSummary)
 	hasSeeAlso := regexp.MustCompile(`(?m)^## See Also\b`).MatchString(bodyAfterSummary)
@@ -359,6 +391,10 @@ func wrapImported(body, repoName, origin string) string {
 	fmt.Fprintf(&sb, "last_verified: %s\n", time.Now().UTC().Format("2006-01-02"))
 	sb.WriteString("status: current\n")
 	fmt.Fprintf(&sb, "cited_files: [\"%s/%s\"]\n", repoName, origin)
+	fmt.Fprintf(&sb, "page_type: %s\n", encResult.PageType)
+	if encResult.Pipeline != "" {
+		fmt.Fprintf(&sb, "encoding: %s\n", encResult.Pipeline)
+	}
 	// Pristine hash lets `keeba sync` tell pristine pages from edited ones.
 	// Stripping or modifying this hash effectively "claims" the page as
 	// hand-curated and keeba sync will skip it.

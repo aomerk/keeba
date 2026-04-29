@@ -12,9 +12,21 @@ import (
 	"github.com/aomerk/keeba/internal/lint"
 )
 
+// PageType is re-exported from internal/encoding so both bench and
+// scaffold can import the type without a cycle. The constants below
+// preserve the bench package's public API for existing callers
+// (the CLI uses bench.PageTypeFunction).
+type PageType = encoding.PageType
+
+// Page-type constants re-exported from internal/encoding.
+const (
+	PageTypeFunction  = encoding.PageTypeFunction
+	PageTypeEntity    = encoding.PageTypeEntity
+	PageTypeNarrative = encoding.PageTypeNarrative
+)
+
 // pageTypeOrder controls the deterministic order page-types appear in the
-// grid output (and the order winners are written to keeba.config.yaml in
-// follow-up PRs).
+// grid output (and the order winners are written to keeba.config.yaml).
 var pageTypeOrder = []PageType{PageTypeFunction, PageTypeEntity, PageTypeNarrative}
 
 // pageRecord is one wiki page with its detected type and stripped body.
@@ -48,7 +60,7 @@ func loadPagesWithType(cfg config.KeebaConfig) ([]pageRecord, error) {
 		out = append(out, pageRecord{
 			Slug:     slug,
 			Body:     body,
-			PageType: DetectPageType(body, cited),
+			PageType: encoding.DetectPageType(body, cited),
 		})
 	}
 	return out, nil

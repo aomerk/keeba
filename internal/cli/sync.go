@@ -44,7 +44,7 @@ Idempotent. Safe to run on every commit.`,
 			if err != nil {
 				return err
 			}
-			res, err := scaffold.SyncFromRepo(cfg.WikiRoot, repoAbs, "")
+			res, err := scaffold.SyncFromRepoWithEncoding(cfg.WikiRoot, repoAbs, "", cfg.Encoding)
 			if err != nil {
 				return err
 			}
