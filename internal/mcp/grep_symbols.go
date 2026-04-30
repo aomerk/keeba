@@ -242,7 +242,8 @@ func snippetTrim(line string) string {
 // grepSymbolsAlternative computes "bytes the agent would have read_file'd"
 // for the grep_symbols call: sum of distinct file sizes the same filters
 // would have touched. Re-walks the symbol slice (cheap — already a copy)
-// and stats each unique file. Powers the SessionStats receipt.
+// and routes through sumFileSizes so the dedup + stat path matches the
+// other tools' receipts.
 func (s *Server) grepSymbolsAlternative(root string, raw json.RawMessage) int {
 	if s.live == nil {
 		return 0
@@ -252,22 +253,9 @@ func (s *Server) grepSymbolsAlternative(root string, raw json.RawMessage) int {
 		return 0
 	}
 	syms := filterSymbols(s.live.Symbols(), strings.TrimSpace(a.File), a.Language, a.Kind)
-	seen := map[string]struct{}{}
-	total := 0
+	files := make([]string, 0, len(syms))
 	for _, sym := range syms {
-		if _, dup := seen[sym.File]; dup {
-			continue
-		}
-		seen[sym.File] = struct{}{}
-		abs, err := safeJoin(root, sym.File)
-		if err != nil {
-			continue
-		}
-		info, err := os.Stat(abs)
-		if err != nil {
-			continue
-		}
-		total += int(info.Size())
+		files = append(files, sym.File)
 	}
-	return total
+	return sumFileSizes(root, files)
 }
