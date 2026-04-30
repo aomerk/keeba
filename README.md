@@ -70,9 +70,10 @@ That's it. Open Claude Code in `my-wiki/`, ask "how does auth work in my-codebas
 | `keeba search QUERY` | BM25 keyword search. Pure Go, no API key. |
 | `keeba search --vector QUERY` | Embedding search via Voyage AI or OpenAI (BYO key). |
 | `keeba index` | One-shot embed of every page → `.keeba-cache/vectors.gob`. |
-| `keeba bench` | Token-savings benchmark vs reading raw sources. Two modes: byte-count (no key) and `--llm anthropic` (real Claude tokens + self-rated confidence). |
+| `keeba compile [path]` | Extract a symbol graph (functions / methods / types + call edges) into `.keeba/symbols.json`. Pure Go, no LLM. Powers the symbol-graph MCP tools below. Self-maintains via fsnotify while `mcp serve` is running. |
+| `keeba bench` | Token-savings benchmark. Three modes: byte-count (no key, wiki vs raw), `--llm anthropic` (real Claude tokens + self-rated confidence), and `--mcp <repo>` (symbol-graph receipt against any code repo, writes `bench/results/<repo>-<date>.md`). |
 | `keeba ingest git --execute` | Heuristic git log walker. BREAKING / incident / ADR / dep-bump → `log.md` / `investigations/` / `decisions/`. No LLM, no API key. |
-| `keeba mcp serve` | Stdio MCP server (protocol 2024-11-05). One tool: `query_documentation`. |
+| `keeba mcp serve` | Stdio MCP server (protocol 2024-11-05). 9 tools: `query_documentation` (BM25 wiki), `find_def` / `search_symbols` / `grep_symbols` / `find_callers` / `tests_for` / `summary` / `read_chunk` (symbol graph), `session_stats` (live savings receipt). |
 | `keeba mcp install --tool {claude-code,cursor,codex}` | Wires keeba's MCP server into the chosen tool. Idempotent. |
 
 ---
@@ -97,6 +98,8 @@ The moat isn't retrieval. It's **the durable loop**: import → curate → sync 
 
 ## Real numbers
 
+### Wiki mode — `karpathy/llm.c`
+
 From [`examples/llm-c/_bench/2026-04-28.md`](examples/llm-c/_bench/2026-04-28.md), captured by running keeba against a fresh `karpathy/llm.c` clone:
 
 | | Wiki mode | Raw mode | Ratio |
@@ -105,6 +108,29 @@ From [`examples/llm-c/_bench/2026-04-28.md`](examples/llm-c/_bench/2026-04-28.md
 | Wall time | 36µs | 2.9ms | **80× faster** |
 
 That's the byte-count bench. The LLM bench (`keeba bench --llm anthropic`) gets the same shape with smaller absolute numbers because Claude reads context smarter than a `cat` does — the API token counts come straight from the response, plus the model self-rates its confidence 1–5.
+
+### Symbol graph — `ethereum/go-ethereum` (1,405 .go files)
+
+From [`bench/results/go-ethereum.md`](bench/results/go-ethereum.md), captured by running `keeba bench --mcp /path/to/go-ethereum`:
+
+| Metric | Value |
+|---|---|
+| Symbols | 20,065 |
+| Call edges | 138,431 |
+| Compile time | ~8 s |
+| Index on disk | 27.6 MiB (~1.4 KiB/symbol) |
+| `bytes_returned` across 9 queries | 41.7 KiB |
+| `bytes_alternative` (read_file equivalent) | 29.7 MiB |
+| **Headline** | **721× cheaper, ~7.7M tokens saved** |
+
+Per-query latencies on this real workload: `find_def` 0 ms (hash lookup), `find_callers` 0 ms (inverted index), `search_symbols` 7–10 ms (BM25 over 20k docs), `summary` 14 ms, `tests_for` 31 ms, `grep_symbols` 20–245 ms (regex sweep over function bodies). Every per-query row reports both `Returned` and `Alternative` bytes — the receipt is honest, not a vibe.
+
+Reproduce:
+
+```bash
+git clone --depth 1 https://github.com/ethereum/go-ethereum /tmp/go-ethereum
+keeba bench --mcp /tmp/go-ethereum
+```
 
 ---
 
@@ -154,9 +180,10 @@ What works today (verified end-to-end on real codebases):
 - ✅ `init`, `init --from-repo`, `sync --from-repo`
 - ✅ `lint`, `drift`, `meta`
 - ✅ `search` (BM25), `search --vector` (Voyage / OpenAI)
-- ✅ `bench`, `bench --llm anthropic`
+- ✅ `bench`, `bench --llm anthropic`, `bench --mcp` (verified on go-ethereum, see numbers above)
+- ✅ `compile` — symbol graph extraction (Go AST + regex extractors for py/js/ts/rs/java/kt/rb/c/cpp), self-maintaining via fsnotify
 - ✅ `ingest git --execute` (heuristic, no LLM)
-- ✅ `mcp serve`, `mcp install` (Claude Code, Cursor, Codex)
+- ✅ `mcp serve`, `mcp install` (Claude Code, Cursor, Codex) — 9 tools including `find_def`, `search_symbols`, `grep_symbols`, `find_callers`, `tests_for`, `summary`, `read_chunk`, `session_stats`
 
 What's v0.4+:
 
