@@ -29,6 +29,7 @@ type LiveIndex struct {
 	idx             *Index
 	byName          map[string][]Symbol
 	callersByCallee map[string][]CallEdge // inverse index for find_callers
+	bm25            *BM25Index            // BM25 over name+sig+doc — search_symbols
 
 	watcher  *fsnotify.Watcher
 	flushDur time.Duration
@@ -59,6 +60,7 @@ func NewLiveIndex(repoRoot string) (*LiveIndex, error) {
 		idx:             &idx,
 		byName:          buildByName(idx.Symbols),
 		callersByCallee: buildCallersByCallee(idx.Edges),
+		bm25:            BuildBM25Index(idx.Symbols),
 		watcher:         fw,
 		flushDur:        30 * time.Second,
 	}
@@ -215,6 +217,7 @@ func (li *LiveIndex) replaceFile(rel string, freshSyms []Symbol, freshEdges []Ca
 	// Indexes
 	li.byName = buildByName(syms)
 	li.callersByCallee = buildCallersByCallee(edges)
+	li.bm25 = BuildBM25Index(syms)
 	li.dirty = true
 }
 
@@ -283,6 +286,16 @@ func (li *LiveIndex) CallersOf(name string) []CallEdge {
 	out := make([]CallEdge, len(src))
 	copy(out, src)
 	return out
+}
+
+// SearchSymbols runs the BM25 query against the in-memory symbol index
+// under the read lock. Returns up to k ranked hits, or nil for empty
+// input / no matches. Used by the search_symbols MCP tool so an agent
+// can resolve "what handles auth" before knowing any exact name.
+func (li *LiveIndex) SearchSymbols(q string, k int) []SearchHit {
+	li.mu.RLock()
+	defer li.mu.RUnlock()
+	return li.bm25.Query(q, k)
 }
 
 // Symbols returns a copy of every symbol. Cost: O(N), used by the

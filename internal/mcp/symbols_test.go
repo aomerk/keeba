@@ -265,6 +265,72 @@ func TestFindDef_NoSymbolGraph(t *testing.T) {
 	}
 }
 
+func TestSearchSymbols_RanksAndReturnsScores(t *testing.T) {
+	s := symbolServer(t)
+	resps := roundTrip(t, s,
+		`{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"search_symbols","arguments":{"query":"server start"}}}`,
+	)
+	text := mcpText(t, resps[0])
+	if !strings.Contains(text, `"query": "server start"`) {
+		t.Errorf("expected query echo, got %q", text)
+	}
+	// Start is a method on Server with both terms — should outrank lone Server.
+	posStart := strings.Index(text, `"name": "Start"`)
+	posServer := strings.Index(text, `"name": "Server"`)
+	if posStart < 0 {
+		t.Fatalf("expected Start in hits, got %q", text)
+	}
+	if posServer >= 0 && posStart > posServer {
+		t.Errorf("expected Start to rank above Server, got Start@%d Server@%d", posStart, posServer)
+	}
+	if !strings.Contains(text, `"score":`) {
+		t.Errorf("expected score field, got %q", text)
+	}
+}
+
+func TestSearchSymbols_KindFilter(t *testing.T) {
+	s := symbolServer(t)
+	resps := roundTrip(t, s,
+		`{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"search_symbols","arguments":{"query":"server","kind":"method"}}}`,
+	)
+	text := mcpText(t, resps[0])
+	if strings.Contains(text, `"name": "Server"`) {
+		t.Errorf("Server (type) should be filtered out by kind=method, got %q", text)
+	}
+	if !strings.Contains(text, `"name": "Start"`) {
+		t.Errorf("expected Start (method), got %q", text)
+	}
+}
+
+func TestSearchSymbols_RequiresQuery(t *testing.T) {
+	s := symbolServer(t)
+	resps := roundTrip(t, s,
+		`{"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"search_symbols","arguments":{}}}`,
+	)
+	if resps[0]["error"] == nil {
+		t.Fatalf("expected error for missing query, got %v", resps[0])
+	}
+}
+
+func TestSearchSymbols_NoSymbolGraph(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "concepts", "x.md"),
+		validFM+"# x\n\n> note\n\n## Sources\n\n## See Also\n")
+	cfg := config.Defaults()
+	cfg.WikiRoot = root
+	s, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resps := roundTrip(t, s,
+		`{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"search_symbols","arguments":{"query":"foo"}}}`,
+	)
+	text := mcpText(t, resps[0])
+	if !strings.Contains(text, "keeba compile") {
+		t.Errorf("expected `keeba compile` hint, got %q", text)
+	}
+}
+
 // mcpText pulls the human-readable text out of an MCP tools/call result.
 func mcpText(t *testing.T, resp map[string]any) string {
 	t.Helper()
