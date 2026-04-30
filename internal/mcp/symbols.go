@@ -163,6 +163,79 @@ func (s *Server) toolFindCallers(raw json.RawMessage) rpcResponse {
 	}}
 }
 
+// searchSymbolsArgs is the argument shape for the search_symbols tool.
+type searchSymbolsArgs struct {
+	Query    string `json:"query"`
+	Limit    int    `json:"limit,omitempty"`
+	Language string `json:"language,omitempty"`
+	Kind     string `json:"kind,omitempty"`
+}
+
+// toolSearchSymbols runs a BM25 query over the symbol index. Pairs with
+// find_def: find_def needs the exact name; search_symbols handles the
+// "what handles auth?" / "where's the JWT validation?" case where the
+// agent has a concept but not a name. Score is included so callers can
+// see why a hit ranked.
+func (s *Server) toolSearchSymbols(raw json.RawMessage) rpcResponse {
+	if s.live == nil {
+		return notCompiledResponse()
+	}
+	var a searchSymbolsArgs
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return rpcResponse{Error: &rpcError{Code: -32602, Message: "bad arguments: " + err.Error()}}
+	}
+	if strings.TrimSpace(a.Query) == "" {
+		return rpcResponse{Error: &rpcError{Code: -32602, Message: "query is required"}}
+	}
+	limit := a.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	// Pull a wider candidate set when filters are present so the post-filter
+	// result still has limit hits.
+	want := limit
+	if a.Language != "" || a.Kind != "" {
+		want = limit * 4
+	}
+	hits := s.live.SearchSymbols(a.Query, want)
+
+	if a.Language != "" || a.Kind != "" {
+		filtered := hits[:0]
+		for _, h := range hits {
+			if a.Language != "" && h.Symbol.Language != a.Language {
+				continue
+			}
+			if a.Kind != "" && h.Symbol.Kind != a.Kind {
+				continue
+			}
+			filtered = append(filtered, h)
+		}
+		hits = filtered
+	}
+	if len(hits) > limit {
+		hits = hits[:limit]
+	}
+
+	body, err := json.MarshalIndent(map[string]any{
+		"query": a.Query,
+		"count": len(hits),
+		"hits":  hits,
+	}, "", "  ")
+	if err != nil {
+		return rpcResponse{Error: &rpcError{Code: -32603, Message: "encode: " + err.Error()}}
+	}
+	return rpcResponse{Result: map[string]any{
+		"content": []map[string]string{{
+			"type": "text",
+			"text": string(body),
+		}},
+	}}
+}
+
 // summaryArgs is the argument shape for the summary tool.
 type summaryArgs struct {
 	File  string `json:"file,omitempty"`

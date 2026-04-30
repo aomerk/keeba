@@ -224,6 +224,33 @@ func (s *Server) listTools() []map[string]any {
 			},
 		},
 		{
+			"name":        "search_symbols",
+			"description": "BM25-rank symbols by free-text query. Use when you have a concept ('auth handler', 'JWT validation', 'stripe webhook') but not the exact name. Returns up to 10 ranked hits with score, file:line, signature, doc. Pairs with find_def: search_symbols finds the symbol, find_def confirms its definition.",
+			"inputSchema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"query": map[string]any{
+						"type":        "string",
+						"description": "Free-text query. Identifier-aware ('auth' matches AuthMiddleware) and prose ('jwt validation' matches doc strings).",
+					},
+					"limit": map[string]any{
+						"type":        "integer",
+						"description": "Max results (default 10, max 50).",
+						"default":     10,
+					},
+					"language": map[string]any{
+						"type":        "string",
+						"description": "Filter by language tag (go, py, ts, js, rs, java, kt, rb, c, cpp).",
+					},
+					"kind": map[string]any{
+						"type":        "string",
+						"description": "Filter by kind (function, method, class, type, interface, const, var).",
+					},
+				},
+				"required": []string{"query"},
+			},
+		},
+		{
 			"name":        "find_callers",
 			"description": "Return every call site of a symbol from the precompiled call graph. Pairs with find_def: find_def says 'X is here', find_callers says 'X is called from these N sites'. Lets the agent answer 'what would break if I rename X' in two MCP calls instead of a grep loop.",
 			"inputSchema": map[string]any{
@@ -315,6 +342,8 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 		resp = s.toolQueryDocumentation(env.Arguments)
 	case "find_def":
 		resp = s.toolFindDef(env.Arguments)
+	case "search_symbols":
+		resp = s.toolSearchSymbols(env.Arguments)
 	case "find_callers":
 		resp = s.toolFindCallers(env.Arguments)
 	case "summary":
