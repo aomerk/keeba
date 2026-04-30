@@ -291,6 +291,25 @@ func (s *Server) listTools() []map[string]any {
 			},
 		},
 		{
+			"name":        "tests_for",
+			"description": "Return the test functions exercising a target symbol. Two heuristics: callers in test files (via the call graph) and name-match (TestFoo for Foo, test_foo for foo). Replaces the find_callers + filter + read_file dance an agent runs every time it changes a symbol and asks 'what tests cover this?'.",
+			"inputSchema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"name": map[string]any{
+						"type":        "string",
+						"description": "Bare symbol name. Exact match.",
+					},
+					"limit": map[string]any{
+						"type":        "integer",
+						"description": "Max results (default 25, max 200).",
+						"default":     25,
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+		{
 			"name":        "find_callers",
 			"description": "Return every call site of a symbol from the precompiled call graph. Pairs with find_def: find_def says 'X is here', find_callers says 'X is called from these N sites'. Lets the agent answer 'what would break if I rename X' in two MCP calls instead of a grep loop.",
 			"inputSchema": map[string]any{
@@ -388,6 +407,8 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 		resp = s.toolGrepSymbols(env.Arguments)
 	case "find_callers":
 		resp = s.toolFindCallers(env.Arguments)
+	case "tests_for":
+		resp = s.toolTestsFor(env.Arguments)
 	case "summary":
 		resp = s.toolSummary(env.Arguments)
 	case "read_chunk":
