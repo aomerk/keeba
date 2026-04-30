@@ -224,6 +224,46 @@ func (s *Server) listTools() []map[string]any {
 			},
 		},
 		{
+			"name":        "grep_symbols",
+			"description": "Regex-search inside symbol BODIES (not just name/sig/doc — search_symbols already covers those). Use when the term lives in the body itself: env-var keys, magic strings, SQL fragments, hardcoded URLs. Returns ranked hits with file:line:col and a snippet of the matching line. Pairs with read_chunk for surrounding context.",
+			"inputSchema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"pattern": map[string]any{
+						"type":        "string",
+						"description": "RE2 regex (or literal text if literal=true). Max 1024 bytes.",
+					},
+					"literal": map[string]any{
+						"type":        "boolean",
+						"description": "Treat pattern as a literal string (regexp.QuoteMeta wraps it). Default false.",
+					},
+					"file": map[string]any{
+						"type":        "string",
+						"description": "Optional file or directory prefix to scope the walk.",
+					},
+					"language": map[string]any{
+						"type":        "string",
+						"description": "Filter by language tag (go, py, ts, js, rs, java, kt, rb, c, cpp).",
+					},
+					"kind": map[string]any{
+						"type":        "string",
+						"description": "Filter by kind (function, method, class, type, interface, const, var).",
+					},
+					"limit": map[string]any{
+						"type":        "integer",
+						"description": "Max total hits across all symbols (default 25, max 200).",
+						"default":     25,
+					},
+					"max_per_symbol": map[string]any{
+						"type":        "integer",
+						"description": "Max hits inside a single symbol body (default 5, max 20).",
+						"default":     5,
+					},
+				},
+				"required": []string{"pattern"},
+			},
+		},
+		{
 			"name":        "search_symbols",
 			"description": "BM25-rank symbols by free-text query. Use when you have a concept ('auth handler', 'JWT validation', 'stripe webhook') but not the exact name. Returns up to 10 ranked hits with score, file:line, signature, doc. Pairs with find_def: search_symbols finds the symbol, find_def confirms its definition.",
 			"inputSchema": map[string]any{
@@ -344,6 +384,8 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 		resp = s.toolFindDef(env.Arguments)
 	case "search_symbols":
 		resp = s.toolSearchSymbols(env.Arguments)
+	case "grep_symbols":
+		resp = s.toolGrepSymbols(env.Arguments)
 	case "find_callers":
 		resp = s.toolFindCallers(env.Arguments)
 	case "summary":
@@ -357,15 +399,29 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 	}
 
 	// Account: every tool call records its returned bytes; tools that
-	// can compute a measurable savings (read_chunk vs. full file read)
-	// also report the alternative size, which makes the session_stats
-	// receipt an honest number rather than a vibe.
+	// can compute a measurable savings (read_chunk vs. full file read,
+	// grep_symbols vs. full read_file of every touched file) also report
+	// the alternative size, which makes the session_stats receipt an
+	// honest number rather than a vibe. New tools register their
+	// alternative computer in altByTool so the dispatcher stays flat.
 	returned, alternative := responseSize(resp), 0
-	if env.Name == "read_chunk" {
-		alternative = readChunkAlternative(s.cfg.WikiRoot, env.Arguments)
+	if fn, ok := s.altByTool()[env.Name]; ok {
+		alternative = fn(s.cfg.WikiRoot, env.Arguments)
 	}
 	s.stats.Record(env.Name, returned, alternative)
 	return resp
+}
+
+// altByTool maps each tool name to a function that computes the
+// "bytes the agent would have pulled in unfiltered" cost for that call,
+// powering the SessionStats savings receipt. Tools without a measurable
+// alternative simply omit themselves — Record(_, _, 0) doesn't claim a
+// saving they can't justify.
+func (s *Server) altByTool() map[string]func(root string, args json.RawMessage) int {
+	return map[string]func(string, json.RawMessage) int{
+		"read_chunk":   readChunkAlternative,
+		"grep_symbols": s.grepSymbolsAlternative,
+	}
 }
 
 // responseSize returns the rough byte size of a tool response — the
