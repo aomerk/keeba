@@ -26,6 +26,7 @@ func newBenchCmd() *cobra.Command {
 		encodingGrid       bool
 		encodingGridByType bool
 		writeConfig        bool
+		mcpRepo            string
 	)
 	cmd := &cobra.Command{
 		Use:   "bench",
@@ -44,6 +45,15 @@ ANTHROPIC_API_KEY to be set.`,
 			if err != nil {
 				return err
 			}
+
+			// --mcp short-circuits the wiki bench: compile the target repo,
+			// run the symbol-graph MCP query suite in-process, write a
+			// receipt-shaped markdown table. Independent path — none of the
+			// wiki / encoding flags below apply.
+			if mcpRepo != "" {
+				return runMCPBench(cmd, mcpRepo, out)
+			}
+
 			qs := bench.DefaultCodeQuestions
 			if questionsFile != "" {
 				qs, err = readQuestions(questionsFile)
@@ -164,7 +174,44 @@ ANTHROPIC_API_KEY to be set.`,
 		"partition wiki pages by detected page-type (function / entity / narrative) and run the grid per partition.")
 	cmd.Flags().BoolVar(&writeConfig, "write-config", false,
 		"after --encoding-grid-by-type, persist the per-type winners to keeba.config.yaml (encoding.{function,entity,narrative}).")
+	cmd.Flags().StringVar(&mcpRepo, "mcp", "",
+		"path to a code repo to bench against the symbol-graph MCP surface. "+
+			"Compiles the repo, runs find_def / search_symbols / grep_symbols / find_callers / "+
+			"tests_for / summary, and writes a receipt-shaped markdown report. "+
+			"Independent of the wiki bench above — other flags are ignored.")
 	return cmd
+}
+
+// runMCPBench compiles the target repo, runs the default MCP query
+// suite in-process, and writes the markdown report to outPath (or a
+// default under bench/results/).
+func runMCPBench(cmd *cobra.Command, repoPath, outPath string) error {
+	abs, err := filepath.Abs(repoPath)
+	if err != nil {
+		return fmt.Errorf("resolve %q: %w", repoPath, err)
+	}
+	if info, err := os.Stat(abs); err != nil || !info.IsDir() {
+		return fmt.Errorf("--mcp %q: not a directory", repoPath)
+	}
+	rep, err := bench.RunMCPBench(abs, nil)
+	if err != nil {
+		return fmt.Errorf("mcp bench: %w", err)
+	}
+	md := bench.MarkdownMCPBench(rep)
+
+	if outPath == "" {
+		outPath = filepath.Join("bench", "results",
+			filepath.Base(abs)+"-"+rep.When.Format("2006-01-02-1504")+".md")
+	}
+	if err := writeBench(outPath, []byte(md)); err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+		"keeba: %s — %d symbols, %d edges, %.1f× cheaper across %d queries (compile %d ms)\n",
+		filepath.Base(abs), rep.SymbolCount, rep.EdgeCount,
+		rep.AlternativeRatio, len(rep.Queries), rep.CompileMs)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", outPath)
+	return nil
 }
 
 // pipelineSpec returns the recommended pipeline name for the given

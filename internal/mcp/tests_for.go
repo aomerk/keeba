@@ -154,6 +154,82 @@ func (s *Server) toolTestsFor(raw json.RawMessage) rpcResponse {
 	}}
 }
 
+// testsForAlternative returns the file-size sum for the distinct test
+// files the same heuristics would have surfaced. Without this tool the
+// agent would do find_callers + filter test files + read each one — the
+// alt is exactly that set's total bytes. Replays the tool's own logic
+// so the bounded limit and dedup match what the agent actually saw.
+func (s *Server) testsForAlternative(root string, raw json.RawMessage) int {
+	if s.live == nil {
+		return 0
+	}
+	var a testsForArgs
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return 0
+	}
+	if strings.TrimSpace(a.Name) == "" {
+		return 0
+	}
+	limit := a.Limit
+	if limit <= 0 {
+		limit = 25
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	type key struct {
+		File string
+		Line int
+	}
+	merged := map[key]string{} // key → file (we only need the file path here)
+	for _, e := range s.live.CallersOf(a.Name) {
+		if !isTestFile(e.CallerFile) {
+			continue
+		}
+		var caller symbol.Symbol
+		var found bool
+		for _, sym := range s.live.ByName(e.Caller) {
+			if sym.File == e.CallerFile {
+				caller = sym
+				found = true
+				break
+			}
+		}
+		if !found {
+			continue
+		}
+		merged[key{File: caller.File, Line: caller.StartLine}] = caller.File
+	}
+	for _, sym := range s.live.Symbols() {
+		if !isTestSymbol(sym) {
+			continue
+		}
+		if !nameMatchesTarget(sym.Name, a.Name) {
+			continue
+		}
+		merged[key{File: sym.File, Line: sym.StartLine}] = sym.File
+	}
+	if len(merged) > limit {
+		// We can't guarantee identical ordering vs the tool's response
+		// without re-doing the sort, but the file set is identical, so
+		// summing here produces the same alt regardless. Cap at limit
+		// by truncating an ordered slice for honest receipt math.
+		files := make([]string, 0, len(merged))
+		for _, f := range merged {
+			files = append(files, f)
+		}
+		if len(files) > limit {
+			files = files[:limit]
+		}
+		return sumFileSizes(root, files)
+	}
+	files := make([]string, 0, len(merged))
+	for _, f := range merged {
+		files = append(files, f)
+	}
+	return sumFileSizes(root, files)
+}
+
 // isTestFile returns true if path looks like a test file in any of the
 // languages keeba extracts symbols from.
 func isTestFile(path string) bool {

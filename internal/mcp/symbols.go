@@ -91,6 +91,62 @@ func (s *Server) toolFindDef(raw json.RawMessage) rpcResponse {
 	return symbolListResponse(matches)
 }
 
+// findDefAlternative returns the file-size sum the agent would have
+// pulled with `grep -rn "Name" .` + read each match. We replay the
+// tool's own match logic (exact name, then case-insensitive contains,
+// then language/kind filter) and stat the distinct files left standing.
+// Bounded by the same limit the tool applies, so the receipt matches
+// what the agent actually saw.
+func (s *Server) findDefAlternative(root string, raw json.RawMessage) int {
+	if s.live == nil {
+		return 0
+	}
+	var a findDefArgs
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return 0
+	}
+	if strings.TrimSpace(a.Name) == "" {
+		return 0
+	}
+	limit := a.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 50 {
+		limit = 50
+	}
+	matches := s.live.ByName(a.Name)
+	if len(matches) == 0 {
+		needle := strings.ToLower(a.Name)
+		s.live.Names(func(name string, syms []symbol.Symbol) {
+			if strings.Contains(strings.ToLower(name), needle) {
+				matches = append(matches, syms...)
+			}
+		})
+	}
+	if a.Language != "" || a.Kind != "" {
+		filtered := matches[:0]
+		for _, sym := range matches {
+			if a.Language != "" && sym.Language != a.Language {
+				continue
+			}
+			if a.Kind != "" && sym.Kind != a.Kind {
+				continue
+			}
+			filtered = append(filtered, sym)
+		}
+		matches = filtered
+	}
+	if len(matches) > limit {
+		matches = matches[:limit]
+	}
+	files := make([]string, 0, len(matches))
+	for _, m := range matches {
+		files = append(files, m.File)
+	}
+	return sumFileSizes(root, files)
+}
+
 // findCallersArgs is the argument shape for the find_callers tool.
 type findCallersArgs struct {
 	Name  string `json:"name"`
@@ -236,6 +292,48 @@ func (s *Server) toolSearchSymbols(raw json.RawMessage) rpcResponse {
 	}}
 }
 
+// findCallersAlternative returns the file-size sum the agent would
+// have pulled with `grep -rn "Name(" .` + read each match. The caller
+// files of the result set are exactly that match list. Bounded by the
+// tool's own limit + file-prefix filter so the receipt matches reality.
+func (s *Server) findCallersAlternative(root string, raw json.RawMessage) int {
+	if s.live == nil {
+		return 0
+	}
+	var a findCallersArgs
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return 0
+	}
+	if strings.TrimSpace(a.Name) == "" {
+		return 0
+	}
+	limit := a.Limit
+	if limit <= 0 {
+		limit = 25
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	edges := s.live.CallersOf(a.Name)
+	if filePrefix := strings.TrimSpace(a.File); filePrefix != "" {
+		filtered := edges[:0]
+		for _, e := range edges {
+			if strings.HasPrefix(e.CallerFile, filePrefix) {
+				filtered = append(filtered, e)
+			}
+		}
+		edges = filtered
+	}
+	if len(edges) > limit {
+		edges = edges[:limit]
+	}
+	files := make([]string, 0, len(edges))
+	for _, e := range edges {
+		files = append(files, e.CallerFile)
+	}
+	return sumFileSizes(root, files)
+}
+
 // summaryArgs is the argument shape for the summary tool.
 type summaryArgs struct {
 	File  string `json:"file,omitempty"`
@@ -277,6 +375,89 @@ func (s *Server) toolSummary(raw json.RawMessage) rpcResponse {
 		return out[i].StartLine < out[j].StartLine
 	})
 	return symbolListResponse(out)
+}
+
+// summaryAlternative returns the file-size sum for the distinct files
+// the summary tool's walk would have surfaced. Without this tool the
+// agent would `ls` the prefix and read each file — that's the alt.
+func (s *Server) summaryAlternative(root string, raw json.RawMessage) int {
+	if s.live == nil {
+		return 0
+	}
+	var a summaryArgs
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return 0
+	}
+	limit := a.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	wantPrefix := strings.TrimSpace(a.File)
+	all := s.live.Symbols()
+	files := make([]string, 0, limit)
+	for _, sym := range all {
+		if wantPrefix != "" && !strings.HasPrefix(sym.File, wantPrefix) {
+			continue
+		}
+		files = append(files, sym.File)
+		if len(files) >= limit {
+			break
+		}
+	}
+	return sumFileSizes(root, files)
+}
+
+// searchSymbolsAlternative returns the file-size sum for the top-K BM25
+// hits — the files an agent would have peeked at after a non-keeba grep
+// for the query terms. Honest lower bound on what the BM25 ranking
+// short-circuited. Replays the same query path used by the tool.
+func (s *Server) searchSymbolsAlternative(root string, raw json.RawMessage) int {
+	if s.live == nil {
+		return 0
+	}
+	var a searchSymbolsArgs
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return 0
+	}
+	if strings.TrimSpace(a.Query) == "" {
+		return 0
+	}
+	limit := a.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 50 {
+		limit = 50
+	}
+	want := limit
+	if a.Language != "" || a.Kind != "" {
+		want = limit * 4
+	}
+	hits := s.live.SearchSymbols(a.Query, want)
+	if a.Language != "" || a.Kind != "" {
+		filtered := hits[:0]
+		for _, h := range hits {
+			if a.Language != "" && h.Symbol.Language != a.Language {
+				continue
+			}
+			if a.Kind != "" && h.Symbol.Kind != a.Kind {
+				continue
+			}
+			filtered = append(filtered, h)
+		}
+		hits = filtered
+	}
+	if len(hits) > limit {
+		hits = hits[:limit]
+	}
+	files := make([]string, 0, len(hits))
+	for _, h := range hits {
+		files = append(files, h.Symbol.File)
+	}
+	return sumFileSizes(root, files)
 }
 
 // symbolListResponse renders a slice of Symbols as the MCP content

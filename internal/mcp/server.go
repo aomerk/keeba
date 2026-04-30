@@ -440,8 +440,13 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 // saving they can't justify.
 func (s *Server) altByTool() map[string]func(root string, args json.RawMessage) int {
 	return map[string]func(string, json.RawMessage) int{
-		"read_chunk":   readChunkAlternative,
-		"grep_symbols": s.grepSymbolsAlternative,
+		"read_chunk":     readChunkAlternative,
+		"grep_symbols":   s.grepSymbolsAlternative,
+		"find_def":       s.findDefAlternative,
+		"find_callers":   s.findCallersAlternative,
+		"search_symbols": s.searchSymbolsAlternative,
+		"summary":        s.summaryAlternative,
+		"tests_for":      s.testsForAlternative,
 	}
 }
 
