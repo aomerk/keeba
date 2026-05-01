@@ -109,6 +109,41 @@ func Defaults() KeebaConfig {
 	}
 }
 
+// FindCodeGraphRoot walks up from start looking for a directory that
+// contains a compiled symbol graph at `.keeba/symbols.json`. Returns the
+// absolute directory path on hit, or an empty string if the walk reaches
+// the filesystem root without finding one. Used by `keeba mcp serve
+// --wiki-root auto` so the MCP server resolves the right repo at startup
+// based on Claude Code's launch cwd, rather than the cwd at install time.
+//
+// `.keeba/symbols.json` is the canonical signal because it's what the MCP
+// server actually consumes (find_def, search_symbols, etc.). A repo with
+// keeba.config.yaml but no compiled graph is no use to the MCP server.
+func FindCodeGraphRoot(start string) string {
+	abs, err := filepath.Abs(start)
+	if err != nil {
+		return ""
+	}
+	info, err := os.Stat(abs)
+	if err != nil {
+		return ""
+	}
+	if !info.IsDir() {
+		abs = filepath.Dir(abs)
+	}
+	for {
+		candidate := filepath.Join(abs, ".keeba", "symbols.json")
+		if st, err := os.Stat(candidate); err == nil && !st.IsDir() {
+			return abs
+		}
+		parent := filepath.Dir(abs)
+		if parent == abs {
+			return ""
+		}
+		abs = parent
+	}
+}
+
 // FindWikiRoot walks up from start looking for a directory containing
 // keeba.config.yaml. Returns the absolute directory path on hit, or an empty
 // string if the walk reaches the filesystem root without finding one.

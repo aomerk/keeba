@@ -48,39 +48,51 @@ Examples:
 				}
 				return fmt.Errorf("--tool must be one of %v; got %q", keys, tool)
 			}
-			if wikiRoot == "" {
-				cwd, err := os.Getwd()
+			// `--wiki-root-override` explicit → bake that absolute path
+			// into the editor config (back-compat path; users who want to
+			// pin a specific repo regardless of editor cwd).
+			//
+			// Empty (the default) → write `--wiki-root auto`. The MCP
+			// server resolves at startup by walking up from the editor's
+			// launch cwd for .keeba/symbols.json. Cross-repo
+			// investigations now hit the right symbol graph instead of
+			// always serving the install-time cwd.
+			//
+			// `auto` is also a valid explicit value, treated the same as
+			// empty for downstream config writers.
+			servedRoot := "auto"
+			displayRoot := "auto (resolved at MCP startup from editor cwd)"
+			if wikiRoot != "" && wikiRoot != "auto" {
+				abs, err := filepath.Abs(wikiRoot)
 				if err != nil {
 					return err
 				}
-				wikiRoot = cwd
-			}
-			abs, err := filepath.Abs(wikiRoot)
-			if err != nil {
-				return err
+				servedRoot = abs
+				displayRoot = abs
 			}
 			switch tool {
 			case "claude-code":
-				if looksLikeWorktree(abs) {
+				if servedRoot != "auto" && looksLikeWorktree(servedRoot) {
 					_, _ = fmt.Fprintf(cmd.OutOrStdout(),
-						"WARNING: %q looks like a git worktree. keeba MCP serves symbols from the path you set with --wiki-root-override (default: cwd). If the worktree's branch is at a different commit than the main checkout, keeba will see stale symbols and Claude Code will silently fall back to Read/Grep. Either run `keeba compile` per-worktree, or accept that this MCP install serves the worktree's snapshot only.\n\n",
-						abs)
+						"WARNING: %q looks like a git worktree. You pinned this path with --wiki-root-override; consider dropping the override so keeba auto-resolves per editor cwd instead (run `keeba mcp install --tool claude-code` without --wiki-root-override).\n\n",
+						servedRoot)
 				}
-				if err := installClaudeCode(cmd, abs, scope); err != nil {
+				if err := installClaudeCode(cmd, servedRoot, displayRoot, scope); err != nil {
 					return err
 				}
 				return applyClaudeCodePatches(cmd, patchAgents, withClaudeMD, withHook, withOutputStyle)
 			case "cursor":
-				return installCursor(cmd, abs, scope)
+				return installCursor(cmd, servedRoot, displayRoot, scope)
 			case "codex":
-				return installCodex(cmd, abs)
+				return installCodex(cmd, servedRoot, displayRoot)
 			}
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&tool, "tool", "", "target tool: claude-code | cursor | codex")
 	cmd.Flags().StringVar(&scope, "scope", "user", "scope: user (default) | project")
-	cmd.Flags().StringVar(&wikiRoot, "wiki-root-override", "", "wiki root the MCP server should serve (default: cwd)")
+	cmd.Flags().StringVar(&wikiRoot, "wiki-root-override", "",
+		"pin a specific path as the MCP server's wiki root. Default (empty) writes `--wiki-root auto` — the server resolves at startup by walking up from the editor's cwd for .keeba/symbols.json so cross-repo investigations hit the right graph. Pass an explicit path only when you want the install pinned to a single repo regardless of where the editor opens.")
 	cmd.Flags().BoolVar(&patchAgents, "patch-agents", false,
 		"claude-code only: add mcp__keeba__* to the allowed-tools list of every ~/.claude/agents/*.md so user-defined sub-agents can invoke keeba (Anthropic's built-in general-purpose agent isn't user-editable; combine with --with-claude-md to steer main session away from dispatching).")
 	cmd.Flags().BoolVar(&withClaudeMD, "with-claude-md", false,
@@ -180,7 +192,14 @@ func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD, withH
 	return nil
 }
 
-func installClaudeCode(cmd *cobra.Command, wikiRoot, scope string) error {
+// installClaudeCode wires keeba into Claude Code's MCP config via
+// `claude mcp add`. servedRoot is the literal value passed to
+// `keeba mcp serve --wiki-root` (typically `auto` so the server
+// resolves cwd at startup; or an explicit absolute path if the user
+// passed --wiki-root-override). displayRoot is what we print to the
+// terminal — for auto-mode it includes the resolution explanation so
+// the user understands what just landed in their config.
+func installClaudeCode(cmd *cobra.Command, servedRoot, displayRoot, scope string) error {
 	bin, err := exec.LookPath("claude")
 	if err != nil {
 		return fmt.Errorf("`claude` CLI not on PATH; install Claude Code first: %w", err)
@@ -200,14 +219,14 @@ func installClaudeCode(cmd *cobra.Command, wikiRoot, scope string) error {
 		"mcp", "add", "keeba",
 		"--scope", scopeFlag,
 		"--",
-		"keeba", "mcp", "serve", "--wiki-root", wikiRoot,
+		"keeba", "mcp", "serve", "--wiki-root", servedRoot,
 	}
 	out, err := exec.Command(bin, args...).CombinedOutput() //nolint:gosec
 	if err != nil {
 		return fmt.Errorf("claude mcp add: %w\n%s", err, string(out))
 	}
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(),
-		"installed keeba MCP into Claude Code (%s scope) → serves %s\n", scopeFlag, wikiRoot)
+		"installed keeba MCP into Claude Code (%s scope) → serves %s\n", scopeFlag, displayRoot)
 	return nil
 }
 
@@ -241,7 +260,7 @@ type cursorServer struct {
 	Args    []string `json:"args"`
 }
 
-func installCursor(cmd *cobra.Command, wikiRoot, scope string) error {
+func installCursor(cmd *cobra.Command, servedRoot, displayRoot, scope string) error {
 	bin, err := exec.LookPath("keeba")
 	if err != nil {
 		// Use the absolute path of this binary as a fallback. The user might
@@ -252,7 +271,7 @@ func installCursor(cmd *cobra.Command, wikiRoot, scope string) error {
 		}
 		bin = exe
 	}
-	target, err := cursorTarget(wikiRoot, scope)
+	target, err := cursorTarget(servedRoot, scope)
 	if err != nil {
 		return err
 	}
@@ -265,7 +284,7 @@ func installCursor(cmd *cobra.Command, wikiRoot, scope string) error {
 	}
 	cfg.MCPServers["keeba"] = cursorServer{
 		Command: bin,
-		Args:    []string{"mcp", "serve", "--wiki-root", wikiRoot},
+		Args:    []string{"mcp", "serve", "--wiki-root", servedRoot},
 	}
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return err
@@ -278,13 +297,26 @@ func installCursor(cmd *cobra.Command, wikiRoot, scope string) error {
 		return err
 	}
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(),
-		"installed keeba MCP into Cursor → %s\n", target)
+		"installed keeba MCP into Cursor → %s (serves %s)\n", target, displayRoot)
 	return nil
 }
 
-func cursorTarget(wikiRoot, scope string) (string, error) {
+// cursorTarget resolves the path to write the Cursor MCP config to.
+// Project scope with auto-mode falls back to cwd for the file location
+// (the per-project mcp.json must live somewhere concrete) — but the
+// `--wiki-root auto` value still flows through so the MCP server
+// resolves at startup, not at install time.
+func cursorTarget(servedRoot, scope string) (string, error) {
 	if scope == "project" {
-		return filepath.Join(wikiRoot, ".cursor", "mcp.json"), nil
+		root := servedRoot
+		if root == "auto" {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return "", err
+			}
+			root = cwd
+		}
+		return filepath.Join(root, ".cursor", "mcp.json"), nil
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -293,7 +325,7 @@ func cursorTarget(wikiRoot, scope string) (string, error) {
 	return filepath.Join(home, ".cursor", "mcp.json"), nil
 }
 
-func installCodex(cmd *cobra.Command, wikiRoot string) error {
+func installCodex(cmd *cobra.Command, servedRoot, displayRoot string) error {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -318,7 +350,7 @@ func installCodex(cmd *cobra.Command, wikiRoot string) error {
 [mcp_servers.keeba]
 command = %q
 args = ["mcp", "serve", "--wiki-root", %q]
-`, bin, wikiRoot)
+`, bin, servedRoot)
 
 	switch existing, err := os.ReadFile(target); { //nolint:gosec
 	case err == nil:
@@ -343,7 +375,7 @@ args = ["mcp", "serve", "--wiki-root", %q]
 		return err
 	}
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(),
-		"installed keeba MCP into Codex → %s\n", target)
+		"installed keeba MCP into Codex → %s (serves %s)\n", target, displayRoot)
 	return nil
 }
 
