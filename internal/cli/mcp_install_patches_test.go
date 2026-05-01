@@ -172,6 +172,100 @@ func TestAppendKeebaClaudeMD_Idempotent(t *testing.T) {
 	}
 }
 
+func TestLooksLikeWorktree_PathComponentSignal(t *testing.T) {
+	cases := []struct {
+		path string
+		want bool
+	}{
+		{"/home/ali/repo/.claude/worktrees/feature-x", true},
+		{"/home/ali/repo/.git/worktrees/wt-y", true},
+		{"/home/ali/repo", false},
+		{"/home/ali/repo/cmd", false},
+		{"/home/ali/repo/internal/cli", false},
+	}
+	for _, c := range cases {
+		got := looksLikeWorktree(c.path)
+		if got != c.want {
+			t.Errorf("looksLikeWorktree(%q) = %v, want %v", c.path, got, c.want)
+		}
+	}
+}
+
+func TestLooksLikeWorktree_DotGitFileSignal(t *testing.T) {
+	dir := t.TempDir()
+	// Plain dir — should NOT trip the worktree detector. No "worktrees"
+	// component, no .git/ at all.
+	if looksLikeWorktree(dir) {
+		t.Errorf("plain temp dir tripped worktree detector: %s", dir)
+	}
+	// Now drop a .git regular file (the format `git worktree add` writes
+	// — points at the parent's worktree pointer dir). Detector should fire.
+	if err := os.WriteFile(filepath.Join(dir, ".git"), []byte("gitdir: /tmp/ignored\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !looksLikeWorktree(dir) {
+		t.Errorf("dir with .git regular file should be detected as worktree: %s", dir)
+	}
+}
+
+func TestKeebaCLAUDEMDSection_AssertivePhrasesPresent(t *testing.T) {
+	// The template is the load-bearing piece of the --with-claude-md
+	// install path. Pin the assertive phrases that earlier wording was
+	// missing — "BEFORE Read", "NEVER", and the token-cost framing — so
+	// future edits don't quietly soften the language back to gentle.
+	for _, want := range []string{
+		"BEFORE Read",
+		"NEVER",
+		"~30% more tokens",
+		"`mcp__keeba__find_def",
+		"`mcp__keeba__grep_symbols",
+		"`mcp__keeba__find_callers",
+		"`mcp__keeba__tests_for",
+		"`mcp__keeba__search_symbols",
+		"`mcp__keeba__read_chunk",
+		"`mcp__keeba__summary",
+		"`mcp__keeba__session_stats",
+		"do NOT inherit user-scope MCP servers",
+	} {
+		if !strings.Contains(keebaCLAUDEMDSection, want) {
+			t.Errorf("keebaCLAUDEMDSection missing required phrase %q", want)
+		}
+	}
+}
+
+func TestKeebaCLAUDEMDSection_StableSectionHeader(t *testing.T) {
+	// Section header must be unique and stable so appendKeebaClaudeMD's
+	// re-run path can locate the existing section reliably. Changing this
+	// breaks idempotency for users who already installed; if it ever
+	// changes, the migration path needs explicit thought (left as a note
+	// for any future editor).
+	if !strings.Contains(keebaCLAUDEMDSection, "## Code investigation in keeba-indexed repos") {
+		t.Fatalf("section header changed — idempotency contract broken")
+	}
+}
+
+func TestAppendKeebaClaudeMD_BracketsTheNewTemplate(t *testing.T) {
+	// Smoke that the new (longer / more assertive) template still ends up
+	// bracketed by the sentinels. Without sentinels, re-running the
+	// install would duplicate the section.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "CLAUDE.md")
+	_ = os.WriteFile(path, []byte("user content\n"), 0o644)
+	if _, err := appendKeebaClaudeMD(path); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := os.ReadFile(path)
+	startIdx := strings.Index(string(got), keebaCLAUDEMDStart)
+	endIdx := strings.Index(string(got), keebaCLAUDEMDEnd)
+	if startIdx < 0 || endIdx <= startIdx {
+		t.Fatalf("sentinels missing or out of order: start=%d end=%d", startIdx, endIdx)
+	}
+	bracketed := string(got)[startIdx:endIdx]
+	if !strings.Contains(bracketed, "BEFORE Read") {
+		t.Errorf("assertive phrase not inside bracketed range — re-run won't replace it")
+	}
+}
+
 func TestAppendKeebaClaudeMD_CreatesIfMissing(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "CLAUDE.md")

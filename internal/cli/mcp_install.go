@@ -59,6 +59,11 @@ Examples:
 			}
 			switch tool {
 			case "claude-code":
+				if looksLikeWorktree(abs) {
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+						"WARNING: %q looks like a git worktree. keeba MCP serves symbols from the path you set with --wiki-root-override (default: cwd). If the worktree's branch is at a different commit than the main checkout, keeba will see stale symbols and Claude Code will silently fall back to Read/Grep. Either run `keeba compile` per-worktree, or accept that this MCP install serves the worktree's snapshot only.\n\n",
+						abs)
+				}
 				if err := installClaudeCode(cmd, abs, scope); err != nil {
 					return err
 				}
