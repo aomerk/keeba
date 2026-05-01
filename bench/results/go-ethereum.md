@@ -1,6 +1,6 @@
 # keeba MCP bench — go-ethereum
 
-_2026-04-30 12:13:15 UTC_
+_2026-05-01 07:13:15 UTC_
 
 ## Index
 
@@ -8,15 +8,15 @@ _2026-04-30 12:13:15 UTC_
 |---|---|
 | Repo | `/tmp/go-ethereum` |
 | Files indexed | 1405 |
-| Symbols | 20065 |
-| Call edges | 138431 |
-| Compile time | 13022 ms |
-| Index size on disk | 27.6 MiB |
+| Symbols | 20067 |
+| Call edges | 138442 |
+| Compile time | 8590 ms |
+| Index size on disk | 35.8 MiB |
 
 ## Receipt
 
-- **721.0× cheaper** in returned bytes vs unfiltered alternative
-- bytes_returned: 41.7 KiB | bytes_alternative: 29.4 MiB | tokens_saved: 7694979
+- **654.2× cheaper** in returned bytes vs unfiltered alternative
+- bytes_returned: 46.0 KiB | bytes_alternative: 29.4 MiB | tokens_saved: 7689551
 
 ## Per-query
 
@@ -24,13 +24,14 @@ _2026-04-30 12:13:15 UTC_
 |---|---|---|---|---|---|
 | find_def main | find_def | 0 ms | 2.2 KiB | 91.7 KiB | 10 |
 | find_def Run | find_def | 0 ms | 2.9 KiB | 58.3 KiB | 10 |
-| search_symbols 'http handler' | search_symbols | 7 ms | 4.0 KiB | 29.9 KiB | 10 |
-| search_symbols 'config load' | search_symbols | 10 ms | 4.3 KiB | 83.9 KiB | 10 |
-| grep_symbols 'os.Getenv' (literal) | grep_symbols | 245 ms | 2.9 KiB | 14.3 MiB | 13 |
-| grep_symbols 'context.Context' (literal) | grep_symbols | 30 ms | 6.5 KiB | 14.3 MiB | 25 |
+| search_symbols 'http handler' | search_symbols | 21 ms | 4.0 KiB | 29.9 KiB | 10 |
+| search_symbols 'config load' | search_symbols | 26 ms | 4.3 KiB | 83.9 KiB | 10 |
+| grep_symbols 'os.Getenv' (literal) | grep_symbols | 229 ms | 2.9 KiB | 14.3 MiB | 13 |
+| grep_symbols 'context.Context' (literal) | grep_symbols | 28 ms | 6.5 KiB | 14.3 MiB | 25 |
 | find_callers main | find_callers | 0 ms | 200 B | 10.3 KiB | 1 |
-| tests_for Run | tests_for | 31 ms | 6.3 KiB | 413.0 KiB | 25 |
-| summary cmd/ | summary | 14 ms | 12.7 KiB | 70.9 KiB | 50 |
+| find_refs Block | find_refs | 0 ms | 4.2 KiB | 99.8 KiB | 25 |
+| tests_for Run | tests_for | 32 ms | 6.3 KiB | 293.9 KiB | 25 |
+| summary cmd/ | summary | 8 ms | 12.7 KiB | 70.9 KiB | 50 |
 
 ## Notes
 
