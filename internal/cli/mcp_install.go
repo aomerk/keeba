@@ -20,9 +20,11 @@ var supportedTools = map[string]string{
 
 func newMCPInstallCmd() *cobra.Command {
 	var (
-		tool     string
-		scope    string
-		wikiRoot string
+		tool         string
+		scope        string
+		wikiRoot     string
+		patchAgents  bool
+		withClaudeMD bool
 	)
 	cmd := &cobra.Command{
 		Use:   "install",
@@ -57,7 +59,10 @@ Examples:
 			}
 			switch tool {
 			case "claude-code":
-				return installClaudeCode(cmd, abs, scope)
+				if err := installClaudeCode(cmd, abs, scope); err != nil {
+					return err
+				}
+				return applyClaudeCodePatches(cmd, patchAgents, withClaudeMD)
 			case "cursor":
 				return installCursor(cmd, abs, scope)
 			case "codex":
@@ -69,8 +74,59 @@ Examples:
 	cmd.Flags().StringVar(&tool, "tool", "", "target tool: claude-code | cursor | codex")
 	cmd.Flags().StringVar(&scope, "scope", "user", "scope: user (default) | project")
 	cmd.Flags().StringVar(&wikiRoot, "wiki-root-override", "", "wiki root the MCP server should serve (default: cwd)")
+	cmd.Flags().BoolVar(&patchAgents, "patch-agents", false,
+		"claude-code only: add mcp__keeba__* to the allowed-tools list of every ~/.claude/agents/*.md so user-defined sub-agents can invoke keeba (Anthropic's built-in general-purpose agent isn't user-editable; combine with --with-claude-md to steer main session away from dispatching).")
+	cmd.Flags().BoolVar(&withClaudeMD, "with-claude-md", false,
+		"claude-code only: append (or update) a keeba section in ~/.claude/CLAUDE.md telling main session to use keeba tools directly and NOT dispatch code-lookup investigations to sub-agents (which lack MCP access).")
 	_ = cmd.MarkFlagRequired("tool")
 	return cmd
+}
+
+// applyClaudeCodePatches applies the optional --patch-agents and
+// --with-claude-md fixes after the MCP server registration succeeds.
+// Each patch is idempotent — re-running prints "no change" instead of
+// duplicating. Failures are surfaced but don't roll back the MCP
+// registration.
+func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD bool) error {
+	if !patchAgents && !withClaudeMD {
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(),
+			"tip: sub-agents (general-purpose Task) lack MCP access by default. Re-run with --patch-agents --with-claude-md to make Claude Code actually use keeba on every code-lookup question.")
+		return nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	if patchAgents {
+		dir := filepath.Join(home, ".claude", "agents")
+		changed, err := patchAgentsDir(dir)
+		if err != nil {
+			return fmt.Errorf("patch agents: %w", err)
+		}
+		if len(changed) == 0 {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"agent files in %s — already patched (no change)\n", dir)
+		} else {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"patched %d agent file(s) in %s with mcp__keeba__* allowed-tools: %v\n",
+				len(changed), dir, changed)
+		}
+	}
+	if withClaudeMD {
+		path := filepath.Join(home, ".claude", "CLAUDE.md")
+		changed, err := appendKeebaClaudeMD(path)
+		if err != nil {
+			return fmt.Errorf("append CLAUDE.md: %w", err)
+		}
+		if changed {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"updated %s with keeba code-investigation guidance\n", path)
+		} else {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"%s already has the keeba section (no change)\n", path)
+		}
+	}
+	return nil
 }
 
 func installClaudeCode(cmd *cobra.Command, wikiRoot, scope string) error {
