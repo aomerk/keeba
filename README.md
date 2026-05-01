@@ -48,11 +48,17 @@ go install github.com/aomerk/keeba/cmd/keeba@latest
 cd ~/my-go-repo
 keeba compile .
 
-# wire it into Claude Code AND apply the agent / CLAUDE.md patches that
-# make Claude actually use keeba on every code-lookup question.
-# (the install registers the MCP server; the two flags fix the UX cliff
-# where MCP-registered-but-never-invoked is the default failure mode)
-keeba mcp install --tool claude-code --patch-agents --with-claude-md
+# wire it into Claude Code AND apply every UX patch keeba ships with.
+# (the install registers the MCP server; the four flags fix the routing
+# AND attack the output-token bloat that ceilings session savings.)
+#   --patch-agents      — add mcp__keeba__* to user-defined sub-agents
+#   --with-claude-md    — assertive routing rules in ~/.claude/CLAUDE.md
+#   --with-hook         — pre-ground every prompt with symbol-graph evidence
+#   --with-output-style — terse engineering style; no preamble, no restatement,
+#                         no closing summary (activate per-session with
+#                         /output-style keeba)
+keeba mcp install --tool claude-code \
+  --patch-agents --with-claude-md --with-hook --with-output-style
 
 # restart Claude Code, then ask any "where is X / what calls Y / what
 # tests cover Z" question. /cost after to see the receipt.

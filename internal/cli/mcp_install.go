@@ -20,12 +20,13 @@ var supportedTools = map[string]string{
 
 func newMCPInstallCmd() *cobra.Command {
 	var (
-		tool         string
-		scope        string
-		wikiRoot     string
-		patchAgents  bool
-		withClaudeMD bool
-		withHook     bool
+		tool            string
+		scope           string
+		wikiRoot        string
+		patchAgents     bool
+		withClaudeMD    bool
+		withHook        bool
+		withOutputStyle bool
 	)
 	cmd := &cobra.Command{
 		Use:   "install",
@@ -68,7 +69,7 @@ Examples:
 				if err := installClaudeCode(cmd, abs, scope); err != nil {
 					return err
 				}
-				return applyClaudeCodePatches(cmd, patchAgents, withClaudeMD, withHook)
+				return applyClaudeCodePatches(cmd, patchAgents, withClaudeMD, withHook, withOutputStyle)
 			case "cursor":
 				return installCursor(cmd, abs, scope)
 			case "codex":
@@ -86,19 +87,21 @@ Examples:
 		"claude-code only: append (or update) a keeba section in ~/.claude/CLAUDE.md telling main session to use keeba tools directly and NOT dispatch code-lookup investigations to sub-agents (which lack MCP access).")
 	cmd.Flags().BoolVar(&withHook, "with-hook", false,
 		"claude-code only: register a UserPromptSubmit hook that runs `keeba context` on every prompt and injects the symbol-graph evidence as additionalContext. Invisible to the user — agent sees the file:line grounding before it picks any tool. Closes the prompt-nudge gap that --patch-agents + --with-claude-md leave open.")
+	cmd.Flags().BoolVar(&withOutputStyle, "with-output-style", false,
+		"claude-code only: install ~/.claude/output-styles/keeba.md — a terse engineering output style that suppresses preamble, restatement of tool results, and closing summaries (the three biggest output-token sinks). Output tokens are priced ~50× cache_read so cutting them moves the dollar needle past the codec ceiling. Activate per-session with /output-style keeba.")
 	_ = cmd.MarkFlagRequired("tool")
 	return cmd
 }
 
 // applyClaudeCodePatches applies the optional --patch-agents,
-// --with-claude-md, and --with-hook fixes after the MCP server
-// registration succeeds. Each patch is idempotent — re-running prints
-// "no change" instead of duplicating. Failures are surfaced but don't
-// roll back the MCP registration.
-func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD, withHook bool) error {
-	if !patchAgents && !withClaudeMD && !withHook {
+// --with-claude-md, --with-hook, and --with-output-style fixes after
+// the MCP server registration succeeds. Each patch is idempotent —
+// re-running prints "no change" instead of duplicating. Failures are
+// surfaced but don't roll back the MCP registration.
+func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD, withHook, withOutputStyle bool) error {
+	if !patchAgents && !withClaudeMD && !withHook && !withOutputStyle {
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(),
-			"tip: sub-agents (general-purpose Task) lack MCP access by default. Re-run with --patch-agents --with-claude-md --with-hook to make Claude Code actually use keeba on every code-lookup question (the --with-hook flag pre-grounds every prompt with symbol-graph evidence — invisible, no nudge required).")
+			"tip: sub-agents (general-purpose Task) lack MCP access by default. Re-run with --patch-agents --with-claude-md --with-hook --with-output-style to make Claude Code actually use keeba AND suppress the output-token bloat (preamble + restatement + summaries) that ceilings session savings at ~30%. Output style activates per-session with /output-style keeba.")
 		return nil
 	}
 	home, err := os.UserHomeDir()
@@ -158,6 +161,20 @@ func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD, withH
 		} else {
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 				"%s already has the keeba hook (no change)\n", path)
+		}
+	}
+	if withOutputStyle {
+		path := filepath.Join(home, ".claude", "output-styles", "keeba.md")
+		changed, err := installKeebaOutputStyle(path)
+		if err != nil {
+			return fmt.Errorf("install output style: %w", err)
+		}
+		if changed {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"installed keeba output style at %s — activate per-session with `/output-style keeba` (suppresses preamble + tool-result restatement + closing summaries; output tokens drop, dollar cost drops with them)\n", path)
+		} else {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"%s already has the keeba output style (no change)\n", path)
 		}
 	}
 	return nil
