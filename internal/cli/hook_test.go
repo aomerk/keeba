@@ -51,7 +51,7 @@ func runHookOnce(t *testing.T, prompt, cwd string) userPromptSubmitOutput {
 	in, _ := json.Marshal(userPromptSubmitInput{Prompt: prompt, CWD: cwd})
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
-	if err := runUserPromptSubmit(bytes.NewReader(in), stdout, stderr, false); err != nil {
+	if err := runUserPromptSubmit(bytes.NewReader(in), stdout, stderr, false, "full"); err != nil {
 		t.Fatalf("runUserPromptSubmit: %v", err)
 	}
 	var out userPromptSubmitOutput
@@ -103,7 +103,7 @@ func TestUserPromptSubmit_EmptyContextOnNoSymbolGraph(t *testing.T) {
 func TestUserPromptSubmit_EmptyOnGarbageStdin(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
-	if err := runUserPromptSubmit(strings.NewReader("not json at all"), stdout, stderr, false); err != nil {
+	if err := runUserPromptSubmit(strings.NewReader("not json at all"), stdout, stderr, false, "full"); err != nil {
 		t.Fatalf("expected nil error on garbage stdin, got %v", err)
 	}
 	var out userPromptSubmitOutput

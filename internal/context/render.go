@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/aomerk/keeba/internal/symbol"
 )
 
 // RenderMarkdown turns a Report into a paste-ready markdown block. The
@@ -78,6 +80,97 @@ func RenderMarkdown(r Report) string {
 	out := sb.String()
 	if r.MaxBytes > 0 && len(out) > r.MaxBytes {
 		// Cut on a line boundary so we don't slice mid-token.
+		cut := r.MaxBytes
+		if nl := strings.LastIndex(out[:cut], "\n"); nl > 0 {
+			cut = nl
+		}
+		out = out[:cut] + "\n\n_…truncated to MaxBytes_\n"
+	}
+	return out
+}
+
+// RenderMarkdownCompact is the codec-encoded variant of RenderMarkdown.
+// Builds a SymTab over every unique symbol in the report, emits the
+// dictionary once at the top, then references symbols by code (s1, s2)
+// in subsequent sections instead of repeating name + signature each
+// time. Most byte savings come from BM25 hits and NameHits sharing
+// many symbols — the redundant copy-pasted signatures collapse to
+// `s1` / `s7` / `s12` references.
+//
+// Lossless from the model's POV: the dictionary section carries every
+// detail (name, file:line, kind, signature, doc), and Claude reads
+// that table once. Subsequent `s1` references resolve back via the
+// table the same way a defined-term in a legal doc resolves.
+func RenderMarkdownCompact(r Report) string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "# keeba context\n\n")
+	fmt.Fprintf(&sb, "_%s_ (compact codec)\n\n", filepath.Base(r.RepoPath))
+	fmt.Fprintf(&sb, "**Prompt:** %s\n\n", oneLine(r.Prompt))
+
+	st := BuildSymTab(r)
+	sb.WriteString(st.RenderTable())
+
+	if len(r.BM25Hits) > 0 {
+		fmt.Fprintln(&sb, "## Most relevant (BM25, by code)")
+		fmt.Fprintln(&sb)
+		for _, h := range r.BM25Hits {
+			code := st.Code(h.Symbol)
+			if code == "" {
+				code = "`" + h.Symbol.Name + "`"
+			} else {
+				code = "`" + code + "`"
+			}
+			fmt.Fprintf(&sb, "- %s (score %.2f)\n", code, h.Score)
+		}
+		fmt.Fprintln(&sb)
+	}
+
+	if len(r.NameHits) > 0 {
+		fmt.Fprintln(&sb, "## By name")
+		fmt.Fprintln(&sb)
+		grouped := map[string][]NameHit{}
+		order := []string{}
+		for _, h := range r.NameHits {
+			if _, ok := grouped[h.Identifier]; !ok {
+				order = append(order, h.Identifier)
+			}
+			grouped[h.Identifier] = append(grouped[h.Identifier], h)
+		}
+		for _, name := range order {
+			syms := make([]symbol.Symbol, 0, len(grouped[name]))
+			for _, h := range grouped[name] {
+				syms = append(syms, h.Symbol)
+			}
+			fmt.Fprintf(&sb, "- `%s` → %s\n", name, st.renderRefList(syms))
+		}
+		fmt.Fprintln(&sb)
+	}
+
+	if len(r.LiteralHits) > 0 {
+		fmt.Fprintln(&sb, "## Literal hits")
+		fmt.Fprintln(&sb)
+		for _, h := range r.LiteralHits {
+			code := st.Code(h.Symbol)
+			if code == "" {
+				code = h.Symbol.Name
+			}
+			fmt.Fprintf(&sb, "- `%s` in `%s` line %d: `%s`\n",
+				h.Literal, code, h.Line, h.Snippet)
+		}
+		fmt.Fprintln(&sb)
+	}
+
+	if len(r.BM25Hits)+len(r.NameHits)+len(r.LiteralHits) == 0 {
+		fmt.Fprintln(&sb, "_(no symbol-graph hits)_")
+	}
+
+	// One-line decoder hint — anything longer pays for itself only on
+	// large reports. The agent reads the table once; codes resolve like
+	// defined-terms in legal docs.
+	fmt.Fprintln(&sb, "_codes `s1..sN` resolve via Symbol table above; agent tools still take real names._")
+
+	out := sb.String()
+	if r.MaxBytes > 0 && len(out) > r.MaxBytes {
 		cut := r.MaxBytes
 		if nl := strings.LastIndex(out[:cut], "\n"); nl > 0 {
 			cut = nl
