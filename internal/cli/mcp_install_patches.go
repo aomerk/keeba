@@ -95,6 +95,29 @@ Hard rules:
   regex sweep over symbol bodies is the same operation, but the response
   is bounded by symbol limits and gets ` + "`bytes_alternative`" + ` accounting.
 
+Answer discipline (output-token savings):
+
+Output tokens are priced ~50× cache_read tokens. Codec layers shrink
+cache_read but not output, which is why session savings ceiling at ~30%
+on cache_read alone. The remaining wins come from cutting output bloat.
+
+- **ONE ` + "`find_def`" + ` hit → that's the answer. STOP.** Do not also call
+  ` + "`find_callers`" + `, ` + "`tests_for`" + `, etc. unless the user asked. Single hits
+  are the answer; extra calls are wasted output (each tool roundtrip
+  adds preamble + restatement tokens to the next assistant turn).
+- **Quote tool-result rows verbatim.** Paste ` + "`file:line`" + ` plus the snippet
+  unchanged. Do NOT paraphrase ("the function HandleAuth lives at...") —
+  restatement is the single biggest output-token sink in code
+  investigations. The agent already has the data; the user does too.
+- **NO preamble.** Skip "I'll investigate by...", "Let me start by...",
+  "First, I'll call...". The user reads the tool call; narrating it
+  again is wasted tokens.
+- **NO closing summary.** Skip "To summarize...", "Based on my
+  investigation...", "In short...". The cited file:line IS the summary.
+- **Conclusion first.** Lead with the answer. Evidence cites follow.
+  Multi-step reasoning stays in your head — write the conclusion, not
+  the chain-of-thought, unless the user asks for the derivation.
+
 Fallback: if a keeba tool returns ` + "`\"no symbol graph in this directory — run keeba compile first\"`" + `,
 mention it once to the user (a one-time suggestion to run ` + "`keeba compile`" + `)
 and proceed with ` + "`Read`" + ` / ` + "`Grep`" + `. Don't loop on the hint.

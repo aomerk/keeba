@@ -320,6 +320,26 @@ func TestKeebaCLAUDEMDSection_AssertivePhrasesPresent(t *testing.T) {
 	}
 }
 
+func TestKeebaCLAUDEMDSection_AnswerDisciplinePhrasesPresent(t *testing.T) {
+	// New "Answer discipline" subsection attacks output-token bloat
+	// (preamble, restatement, closing summaries) — the dominant cost
+	// component the codec layers can't touch. Pin the rules so future
+	// edits can't quietly soften them: this is the lever that pushes
+	// session savings past the ~30% cache_read ceiling.
+	for _, want := range []string{
+		"Answer discipline",
+		"NO preamble",
+		"NO closing summary",
+		"Quote tool-result rows verbatim",
+		"Conclusion first",
+		"50× cache_read",
+	} {
+		if !strings.Contains(keebaCLAUDEMDSection, want) {
+			t.Errorf("keebaCLAUDEMDSection missing answer-discipline phrase %q", want)
+		}
+	}
+}
+
 func TestKeebaCLAUDEMDSection_StableSectionHeader(t *testing.T) {
 	// Section header must be unique and stable so appendKeebaClaudeMD's
 	// re-run path can locate the existing section reliably. Changing this
