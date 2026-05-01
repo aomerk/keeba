@@ -10,9 +10,9 @@ import (
 
 func TestPatchAgentFile_AddsKeebaTools(t *testing.T) {
 	dir := t.TempDir()
-	path := filepath.Join(dir, "indexer-debug.md")
+	path := filepath.Join(dir, "sample-agent.md")
 	body := `---
-name: indexer-debug
+name: sample-agent
 description: x
 allowed-tools:
   - Read

@@ -97,8 +97,9 @@ func ExtractIdentifiers(prompt string) []string {
 
 // ExtractQuoted pulls quoted literals out of a prompt — useful for
 // driving grep_symbols (literal=true) since users tend to quote the
-// magic strings they're chasing ("DATABASE_URL", "WTGXX", etc.).
-// Trivial 1-2 char strings are dropped; longer ones survive.
+// magic strings they're chasing (env-var names, ticker symbols,
+// hardcoded constants, SQL fragments). Trivial 1-2 char strings are
+// dropped; longer ones survive.
 func ExtractQuoted(prompt string) []string {
 	seen := map[string]struct{}{}
 	var out []string

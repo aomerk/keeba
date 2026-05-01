@@ -28,7 +28,7 @@ func TestExtractIdentifiers_CamelAndSnake(t *testing.T) {
 }
 
 func TestExtractIdentifiers_DropsCommonWords(t *testing.T) {
-	prompt := "I am investigating monSet promotion logic with the indexer team"
+	prompt := "I am investigating cacheKey promotion logic with the auth team"
 	got := ExtractIdentifiers(prompt)
 	for _, drop := range []string{"I", "the", "with"} {
 		for _, g := range got {

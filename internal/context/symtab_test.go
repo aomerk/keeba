@@ -124,11 +124,11 @@ func TestRenderTable_NonDefaultKindAppears(t *testing.T) {
 }
 
 func TestRenderMarkdownCompact_SmallerThanFull(t *testing.T) {
-	// On a real-world prompt the lean codec saves ~50% (measured on
-	// risk-graph-indexer Slack-thread investigation: 6,104 → 2,931
-	// bytes). On a small fixture the savings are smaller because the
-	// "## Symbol table" header overhead is fixed but per-entry
-	// savings scale with sig + doc length. Pin "≥30%" here as the
+	// On a real-world impact-tracing prompt the lean codec saves ~50%
+	// (measured locally on a private Go codebase). On a small fixture
+	// the savings are smaller because the "## Symbol table" header
+	// overhead is fixed but per-entry savings scale with sig + doc
+	// length. Pin "≥30%" here as the
 	// floor that any reasonable fixture should clear.
 	syms := []symbol.Symbol{
 		makeSym("AuthMiddleware", "auth/mw.go", 5),
