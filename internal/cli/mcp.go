@@ -14,7 +14,8 @@ func newMCPCmd() *cobra.Command {
 		Use:   "mcp",
 		Short: "MCP server commands.",
 	}
-	cmd.AddCommand(&cobra.Command{
+	var codec string
+	serveCmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Run the keeba MCP server over stdio.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -27,6 +28,9 @@ func newMCPCmd() *cobra.Command {
 				return err
 			}
 			srv.Version = Version
+			if codec != "" {
+				srv.Codec = codec
+			}
 
 			// Start the live-symbol watcher in the background when a
 			// graph is loaded. Edits to any indexed file re-extract that
@@ -47,7 +51,10 @@ func newMCPCmd() *cobra.Command {
 			fmt.Fprintln(os.Stderr, srv.Stats().SummaryLine())
 			return err
 		},
-	})
+	}
+	serveCmd.Flags().StringVar(&codec, "codec", "",
+		"response codec: `full` (default; full Symbol per row) or `lean` (interned codes + minimal metadata; agent calls `expand` for sig/doc on demand). Phase 15A: lean mode applies to find_def only — other tools fall through to full until the codec proves itself in real /cost A/Bs.")
+	cmd.AddCommand(serveCmd)
 	cmd.AddCommand(newMCPInstallCmd())
 	return cmd
 }

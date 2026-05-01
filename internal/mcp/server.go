@@ -53,7 +53,9 @@ type Server struct {
 	idx     *search.Index
 	live    *symbol.LiveIndex // nil when no symbol graph is compiled yet
 	stats   *SessionStats
-	Version string // surfaced as serverInfo.version on initialize
+	codes   *codeTable // session-scoped symbol→code map for the lean codec
+	Codec   string     // "full" (default, full Symbol per row) or "lean" (codes + minimal metadata, agent calls expand for details)
+	Version string     // surfaced as serverInfo.version on initialize
 }
 
 // Stats exposes the live session counters. Useful when callers want to
@@ -74,7 +76,7 @@ func New(cfg config.KeebaConfig) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("build index: %w", err)
 	}
-	srv := &Server{cfg: cfg, idx: idx, stats: &SessionStats{}, Version: "dev"}
+	srv := &Server{cfg: cfg, idx: idx, stats: &SessionStats{}, codes: newCodeTable(), Codec: "full", Version: "dev"}
 
 	// Optional: load symbol graph from .keeba/symbols.json. Missing graph
 	// is fine — the symbol-aware tools just respond with a hint to run
@@ -379,6 +381,20 @@ func (s *Server) listTools() []map[string]any {
 			},
 		},
 		{
+			"name":        "expand",
+			"description": "Resolve a session-scoped symbol code (s1, s42, ...) returned by lean-codec tools back to the full Symbol struct (name, kind, file, line range, signature, doc, receiver, language). Lean codec saves bytes by returning codes + minimal metadata per hit; call expand only when you need the signature or doc detail to reason about a specific symbol. Codes are stable for the server's lifetime, so codes received in earlier tool calls remain valid.",
+			"inputSchema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"code": map[string]any{
+						"type":        "string",
+						"description": "Symbol code (e.g. 's42') from a prior lean-codec tool response.",
+					},
+				},
+				"required": []string{"code"},
+			},
+		},
+		{
 			"name":        "session_stats",
 			"description": "Return live counters for this MCP session: tool calls, bytes returned, bytes the agent would have pulled in unfiltered (read_chunk only), and the implied token savings. Agents and humans use this to render the 'you saved $X this session' receipt — the honest answer to 'is keeba worth installing'.",
 			"inputSchema": map[string]any{
@@ -445,6 +461,8 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 		resp = s.toolReadChunk(env.Arguments)
 	case "session_stats":
 		resp = s.toolSessionStats(env.Arguments)
+	case "expand":
+		resp = s.toolExpand(env.Arguments)
 	default:
 		return rpcResponse{Error: &rpcError{Code: -32602, Message: "unknown tool: " + env.Name}}
 	}

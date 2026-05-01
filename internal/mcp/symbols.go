@@ -88,7 +88,7 @@ func (s *Server) toolFindDef(raw json.RawMessage) rpcResponse {
 	if len(matches) > limit {
 		matches = matches[:limit]
 	}
-	return symbolListResponse(matches)
+	return s.symbolListByCodec(matches)
 }
 
 // findDefAlternative returns the file-size sum the agent would have
@@ -467,6 +467,56 @@ func symbolListResponse(syms []symbol.Symbol) rpcResponse {
 	body, err := json.MarshalIndent(map[string]any{
 		"count":   len(syms),
 		"symbols": syms,
+	}, "", "  ")
+	if err != nil {
+		return rpcResponse{Error: &rpcError{Code: -32603, Message: "encode: " + err.Error()}}
+	}
+	return rpcResponse{Result: map[string]any{
+		"content": []map[string]string{{
+			"type": "text",
+			"text": string(body),
+		}},
+	}}
+}
+
+// leanRow is the lean-codec representation of a symbol — code + just
+// enough metadata for the agent to reason ("AuthMiddleware lives at
+// auth/mw.go:5-12, it's a function") without the full sig+doc payload.
+// Sig + doc come back via the expand tool when the agent actually
+// needs them.
+type leanRow struct {
+	Code      string `json:"code"`
+	Name      string `json:"name"`
+	Kind      string `json:"kind"`
+	File      string `json:"file"`
+	StartLine int    `json:"start_line"`
+	EndLine   int    `json:"end_line"`
+}
+
+// symbolListByCodec dispatches to symbolListResponse (full codec) or
+// the lean-row response based on s.Codec. In lean mode every symbol
+// gets registered in the session codetable so the codes returned to
+// the agent resolve correctly via the `expand` tool.
+func (s *Server) symbolListByCodec(syms []symbol.Symbol) rpcResponse {
+	if s.Codec != "lean" {
+		return symbolListResponse(syms)
+	}
+	rows := make([]leanRow, 0, len(syms))
+	for _, sym := range syms {
+		rows = append(rows, leanRow{
+			Code:      s.codes.codeFor(sym),
+			Name:      sym.Name,
+			Kind:      sym.Kind,
+			File:      sym.File,
+			StartLine: sym.StartLine,
+			EndLine:   sym.EndLine,
+		})
+	}
+	body, err := json.MarshalIndent(map[string]any{
+		"codec":   "lean",
+		"count":   len(rows),
+		"symbols": rows,
+		"hint":    "call mcp__keeba__expand(code) for full sig+doc on any row",
 	}, "", "  ")
 	if err != nil {
 		return rpcResponse{Error: &rpcError{Code: -32603, Message: "encode: " + err.Error()}}
