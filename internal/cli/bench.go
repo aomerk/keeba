@@ -27,6 +27,7 @@ func newBenchCmd() *cobra.Command {
 		encodingGridByType bool
 		writeConfig        bool
 		mcpRepo            string
+		hookPromptsRepo    string
 	)
 	cmd := &cobra.Command{
 		Use:   "bench",
@@ -50,6 +51,10 @@ ANTHROPIC_API_KEY to be set.`,
 			// run the symbol-graph MCP query suite in-process, write a
 			// receipt-shaped markdown table. Independent path — none of the
 			// wiki / encoding flags below apply.
+			if hookPromptsRepo != "" {
+				return runHookPromptsBench(cmd, hookPromptsRepo, out)
+			}
+
 			if mcpRepo != "" {
 				return runMCPBench(cmd, mcpRepo, out)
 			}
@@ -179,7 +184,52 @@ ANTHROPIC_API_KEY to be set.`,
 			"Compiles the repo, runs find_def / search_symbols / grep_symbols / find_callers / "+
 			"tests_for / summary, and writes a receipt-shaped markdown report. "+
 			"Independent of the wiki bench above — other flags are ignored.")
+	cmd.Flags().StringVar(&hookPromptsRepo, "hook-prompts", "",
+		"path to a code repo (must already have .keeba/symbols.json) to A/B test the hook codecs. "+
+			"Drives the built-in prompt panel through both --codec=full and --codec=symtab; "+
+			"reports per-prompt byte deltas + aggregate mean savings. Output is aggregate-only — "+
+			"no source content from the target repo lands in the report. Safe to run on a private "+
+			"codebase and commit results to a public keeba repo.")
 	return cmd
+}
+
+// runHookPromptsBench drives the built-in hook prompt panel through
+// both the full and symtab codecs against repoPath's compiled symbol
+// graph and writes an aggregate-only markdown report. Privacy guarantee
+// (load-bearing for the "run it on your private codebase" pitch): the
+// report contains prompt LABELS + byte counts only, never any source
+// excerpts or rendered hook output from the target repo.
+func runHookPromptsBench(cmd *cobra.Command, repoPath, outPath string) error {
+	abs, err := filepath.Abs(repoPath)
+	if err != nil {
+		return fmt.Errorf("resolve %q: %w", repoPath, err)
+	}
+	if info, err := os.Stat(abs); err != nil || !info.IsDir() {
+		return fmt.Errorf("--hook-prompts %q: not a directory", repoPath)
+	}
+	rep, err := bench.RunHookBench(abs, nil)
+	if err != nil {
+		return fmt.Errorf("hook bench: %w", err)
+	}
+	md := bench.MarkdownHookBench(rep, true)
+
+	if outPath == "" {
+		// Default filename is repo-name-free so a default-path commit
+		// from a private-repo bench run won't leak the repo's identity.
+		// Users who want identifiable filenames can pass --out.
+		outPath = filepath.Join("bench", "results",
+			"codec-ab-"+rep.When.Format("2006-01-02-1504")+".md")
+	}
+	if err := writeBench(outPath, []byte(md)); err != nil {
+		return err
+	}
+	// Stdout summary stays in the user's terminal (not committed) so
+	// printing the basename is fine for local awareness.
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+		"keeba codec A/B: %s — mean %.1f%% savings (min %.1f%% / max %.1f%%) across %d prompts\n",
+		rep.RepoBase, rep.MeanSavings, rep.MinSavings, rep.MaxSavings, len(rep.Rows))
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "wrote %s\n", outPath)
+	return nil
 }
 
 // runMCPBench compiles the target repo, runs the default MCP query
