@@ -25,6 +25,7 @@ func newMCPInstallCmd() *cobra.Command {
 		wikiRoot     string
 		patchAgents  bool
 		withClaudeMD bool
+		withHook     bool
 	)
 	cmd := &cobra.Command{
 		Use:   "install",
@@ -67,7 +68,7 @@ Examples:
 				if err := installClaudeCode(cmd, abs, scope); err != nil {
 					return err
 				}
-				return applyClaudeCodePatches(cmd, patchAgents, withClaudeMD)
+				return applyClaudeCodePatches(cmd, patchAgents, withClaudeMD, withHook)
 			case "cursor":
 				return installCursor(cmd, abs, scope)
 			case "codex":
@@ -83,19 +84,21 @@ Examples:
 		"claude-code only: add mcp__keeba__* to the allowed-tools list of every ~/.claude/agents/*.md so user-defined sub-agents can invoke keeba (Anthropic's built-in general-purpose agent isn't user-editable; combine with --with-claude-md to steer main session away from dispatching).")
 	cmd.Flags().BoolVar(&withClaudeMD, "with-claude-md", false,
 		"claude-code only: append (or update) a keeba section in ~/.claude/CLAUDE.md telling main session to use keeba tools directly and NOT dispatch code-lookup investigations to sub-agents (which lack MCP access).")
+	cmd.Flags().BoolVar(&withHook, "with-hook", false,
+		"claude-code only: register a UserPromptSubmit hook that runs `keeba context` on every prompt and injects the symbol-graph evidence as additionalContext. Invisible to the user — agent sees the file:line grounding before it picks any tool. Closes the prompt-nudge gap that --patch-agents + --with-claude-md leave open.")
 	_ = cmd.MarkFlagRequired("tool")
 	return cmd
 }
 
-// applyClaudeCodePatches applies the optional --patch-agents and
-// --with-claude-md fixes after the MCP server registration succeeds.
-// Each patch is idempotent — re-running prints "no change" instead of
-// duplicating. Failures are surfaced but don't roll back the MCP
-// registration.
-func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD bool) error {
-	if !patchAgents && !withClaudeMD {
+// applyClaudeCodePatches applies the optional --patch-agents,
+// --with-claude-md, and --with-hook fixes after the MCP server
+// registration succeeds. Each patch is idempotent — re-running prints
+// "no change" instead of duplicating. Failures are surfaced but don't
+// roll back the MCP registration.
+func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD, withHook bool) error {
+	if !patchAgents && !withClaudeMD && !withHook {
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(),
-			"tip: sub-agents (general-purpose Task) lack MCP access by default. Re-run with --patch-agents --with-claude-md to make Claude Code actually use keeba on every code-lookup question.")
+			"tip: sub-agents (general-purpose Task) lack MCP access by default. Re-run with --patch-agents --with-claude-md --with-hook to make Claude Code actually use keeba on every code-lookup question (the --with-hook flag pre-grounds every prompt with symbol-graph evidence — invisible, no nudge required).")
 		return nil
 	}
 	home, err := os.UserHomeDir()
@@ -129,6 +132,32 @@ func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD bool) 
 		} else {
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 				"%s already has the keeba section (no change)\n", path)
+		}
+	}
+	if withHook {
+		path := filepath.Join(home, ".claude", "settings.json")
+		exe, err := os.Executable()
+		if err != nil {
+			return fmt.Errorf("locate keeba binary: %w", err)
+		}
+		// Prefer the package-managed `keeba` on PATH for portability —
+		// users update via go install / brew and the hook should pick
+		// up the new binary automatically. Fall back to the absolute
+		// path of the running executable.
+		bin := exe
+		if look, err := exec.LookPath("keeba"); err == nil {
+			bin = look
+		}
+		changed, err := installUserPromptSubmitHook(path, bin)
+		if err != nil {
+			return fmt.Errorf("install hook: %w", err)
+		}
+		if changed {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"registered UserPromptSubmit hook in %s — Claude Code will pre-ground every prompt with keeba context (restart Claude Code to pick it up)\n", path)
+		} else {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"%s already has the keeba hook (no change)\n", path)
 		}
 	}
 	return nil

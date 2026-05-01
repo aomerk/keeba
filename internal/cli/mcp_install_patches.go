@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -98,6 +99,102 @@ Fallback: if a keeba tool returns ` + "`\"no symbol graph in this directory — 
 mention it once to the user (a one-time suggestion to run ` + "`keeba compile`" + `)
 and proceed with ` + "`Read`" + ` / ` + "`Grep`" + `. Don't loop on the hint.
 `
+
+// keebaHookSentinel is the marker substring we embed in the hook
+// command so re-running the install is idempotent — settings.json may
+// have other UserPromptSubmit entries, we just need to recognize ours.
+// Anyone else writing a UserPromptSubmit hook with this marker is asking
+// for it.
+const keebaHookSentinel = "keeba hook user-prompt-submit"
+
+// installUserPromptSubmitHook upserts a Claude Code UserPromptSubmit
+// hook that invokes `<keebaBin> hook user-prompt-submit` on every prompt.
+// Idempotent — re-runs replace the existing entry rather than duplicate.
+// Returns (changed, err): changed=false means the existing entry was
+// already byte-identical, no write needed.
+func installUserPromptSubmitHook(settingsPath, keebaBin string) (bool, error) {
+	body, err := os.ReadFile(settingsPath) //nolint:gosec
+	if err != nil && !os.IsNotExist(err) {
+		return false, err
+	}
+	settings := map[string]any{}
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, &settings); err != nil {
+			return false, fmt.Errorf("parse %s: %w", settingsPath, err)
+		}
+	}
+
+	hooks, _ := settings["hooks"].(map[string]any)
+	if hooks == nil {
+		hooks = map[string]any{}
+	}
+
+	command := keebaBin + " hook user-prompt-submit"
+	desired := map[string]any{
+		"hooks": []any{
+			map[string]any{
+				"type":    "command",
+				"command": command,
+				"timeout": 5000,
+			},
+		},
+	}
+
+	// Filter existing UserPromptSubmit entries: drop any that already
+	// contain the sentinel (our prior install) and keep the rest.
+	existing, _ := hooks["UserPromptSubmit"].([]any)
+	pruned := make([]any, 0, len(existing)+1)
+	for _, entry := range existing {
+		if !entryReferencesKeeba(entry) {
+			pruned = append(pruned, entry)
+		}
+	}
+	pruned = append(pruned, desired)
+
+	hooks["UserPromptSubmit"] = pruned
+	settings["hooks"] = hooks
+
+	out, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return false, err
+	}
+	out = append(out, '\n')
+	if string(out) == string(body) {
+		return false, nil
+	}
+	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
+		return false, err
+	}
+	if err := os.WriteFile(settingsPath, out, 0o644); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// entryReferencesKeeba walks one UserPromptSubmit entry's nested
+// "hooks" array and returns true when any command contains the keeba
+// sentinel. Used by installUserPromptSubmitHook to dedupe across runs.
+func entryReferencesKeeba(entry any) bool {
+	m, ok := entry.(map[string]any)
+	if !ok {
+		return false
+	}
+	inner, ok := m["hooks"].([]any)
+	if !ok {
+		return false
+	}
+	for _, h := range inner {
+		hm, ok := h.(map[string]any)
+		if !ok {
+			continue
+		}
+		cmd, _ := hm["command"].(string)
+		if strings.Contains(cmd, keebaHookSentinel) {
+			return true
+		}
+	}
+	return false
+}
 
 // looksLikeWorktree returns true when path appears to be inside a git
 // worktree rather than a primary checkout. We check two cheap signals:

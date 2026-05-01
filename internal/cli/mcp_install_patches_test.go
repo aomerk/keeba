@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -169,6 +170,92 @@ func TestAppendKeebaClaudeMD_Idempotent(t *testing.T) {
 	second, _ := os.ReadFile(path)
 	if string(first) != string(second) {
 		t.Errorf("idempotent append changed bytes")
+	}
+}
+
+func TestInstallUserPromptSubmitHook_FreshFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "settings.json")
+	changed, err := installUserPromptSubmitHook(path, "/usr/local/bin/keeba")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !changed {
+		t.Errorf("expected change=true on fresh file")
+	}
+	body, _ := os.ReadFile(path)
+	if !strings.Contains(string(body), keebaHookSentinel) {
+		t.Errorf("settings.json missing keeba sentinel:\n%s", body)
+	}
+	// Must be valid JSON.
+	var parsed map[string]any
+	if err := json.Unmarshal(body, &parsed); err != nil {
+		t.Errorf("settings.json isn't valid JSON: %v", err)
+	}
+}
+
+func TestInstallUserPromptSubmitHook_PreservesOtherHooks(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "settings.json")
+	// Pre-existing settings with an unrelated SessionStart hook the
+	// user already configured. Install must not touch it.
+	original := []byte(`{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"echo hi"}]}]}}`)
+	_ = os.WriteFile(path, original, 0o644)
+
+	if _, err := installUserPromptSubmitHook(path, "keeba"); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := os.ReadFile(path)
+	if !strings.Contains(string(body), `"echo hi"`) {
+		t.Errorf("pre-existing SessionStart hook lost:\n%s", body)
+	}
+	if !strings.Contains(string(body), keebaHookSentinel) {
+		t.Errorf("keeba hook not added:\n%s", body)
+	}
+}
+
+func TestInstallUserPromptSubmitHook_Idempotent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "settings.json")
+	if _, err := installUserPromptSubmitHook(path, "/usr/local/bin/keeba"); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := os.ReadFile(path)
+	changed, err := installUserPromptSubmitHook(path, "/usr/local/bin/keeba")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changed {
+		t.Errorf("second install should be no-op")
+	}
+	second, _ := os.ReadFile(path)
+	if string(first) != string(second) {
+		t.Errorf("idempotent install changed bytes")
+	}
+}
+
+func TestInstallUserPromptSubmitHook_ReplacesPriorKeebaEntry(t *testing.T) {
+	// User had an older keeba hook entry pointing at a stale binary
+	// path. Re-running install should replace, not duplicate.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "settings.json")
+	if _, err := installUserPromptSubmitHook(path, "/old/path/keeba"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := installUserPromptSubmitHook(path, "/new/path/keeba"); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := os.ReadFile(path)
+	if strings.Contains(string(body), "/old/path/keeba") {
+		t.Errorf("old hook entry not replaced:\n%s", body)
+	}
+	if !strings.Contains(string(body), "/new/path/keeba") {
+		t.Errorf("new hook entry missing:\n%s", body)
+	}
+	// Only one keeba entry should exist after dedup.
+	count := strings.Count(string(body), keebaHookSentinel)
+	if count != 1 {
+		t.Errorf("want 1 keeba hook entry, got %d:\n%s", count, body)
 	}
 }
 
