@@ -29,3 +29,10 @@ coverage.html
 .keeba-cache/
 *.kbdb
 .keeba/
+
+# Local-only A/B bench harness + prompt fixtures. Prompts are real
+# investigation transcripts (Slack threads etc.) — never committed.
+# Script is local because it embeds Claude Code session assumptions
+# (auth flow, model, effort).
+/scripts/bench-keeba-ab.sh
+/bench-prompts/
