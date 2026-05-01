@@ -100,6 +100,83 @@ mention it once to the user (a one-time suggestion to run ` + "`keeba compile`" 
 and proceed with ` + "`Read`" + ` / ` + "`Grep`" + `. Don't loop on the hint.
 `
 
+// syncClaudeCodeCodec edits ~/.claude.json mcpServers.keeba.args to
+// match the requested codec. Three modes:
+//
+//	codec == "full"  → strip any existing "--codec X" pair from args
+//	                   (full is the server-side default; absent flag = full)
+//	codec == "lean"  → ensure args contain "--codec lean", replace any
+//	                   prior codec value
+//	codec == ""      → no-op; user didn't pass --codec, leave config alone
+//
+// Idempotent — running twice with the same codec produces the same args
+// and reports changed=false on the second call. Only touches the keeba
+// entry; other MCP servers in the config are untouched.
+func syncClaudeCodeCodec(settingsPath, codec string) (bool, error) {
+	if codec == "" {
+		return false, nil
+	}
+	if codec != "full" && codec != "lean" {
+		return false, fmt.Errorf("--codec must be `full` or `lean`, got %q", codec)
+	}
+	body, err := os.ReadFile(settingsPath) //nolint:gosec
+	if err != nil {
+		return false, fmt.Errorf("read %s: %w", settingsPath, err)
+	}
+	var settings map[string]any
+	if err := json.Unmarshal(body, &settings); err != nil {
+		return false, fmt.Errorf("parse %s: %w", settingsPath, err)
+	}
+	servers, _ := settings["mcpServers"].(map[string]any)
+	if servers == nil {
+		return false, fmt.Errorf("no mcpServers in %s — run `keeba mcp install --tool claude-code` first", settingsPath)
+	}
+	keeba, _ := servers["keeba"].(map[string]any)
+	if keeba == nil {
+		return false, fmt.Errorf("no keeba entry in mcpServers — run `keeba mcp install --tool claude-code` first")
+	}
+	args, _ := keeba["args"].([]any)
+	if args == nil {
+		args = []any{}
+	}
+
+	// Strip any existing "--codec <value>" pair regardless of value.
+	stripped := make([]any, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		if v, ok := args[i].(string); ok && v == "--codec" && i+1 < len(args) {
+			i++ // skip the value too
+			continue
+		}
+		stripped = append(stripped, args[i])
+	}
+
+	// Append the new codec pair only when the value isn't the server
+	// default. "full" is implicit; "lean" gets the flag.
+	if codec == "lean" {
+		stripped = append(stripped, "--codec", "lean")
+	}
+
+	// Detect no-op: if the new args slice is byte-identical to the old
+	// one's encoding, skip the write so the file's mtime doesn't churn
+	// and re-runs report "no change" honestly.
+	keeba["args"] = stripped
+	servers["keeba"] = keeba
+	settings["mcpServers"] = servers
+
+	out, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return false, err
+	}
+	out = append(out, '\n')
+	if string(out) == string(body) {
+		return false, nil
+	}
+	if err := os.WriteFile(settingsPath, out, 0o644); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // keebaHookSentinel is the marker substring we embed in the hook
 // command so re-running the install is idempotent — settings.json may
 // have other UserPromptSubmit entries, we just need to recognize ours.

@@ -26,6 +26,7 @@ func newMCPInstallCmd() *cobra.Command {
 		patchAgents  bool
 		withClaudeMD bool
 		withHook     bool
+		codec        string
 	)
 	cmd := &cobra.Command{
 		Use:   "install",
@@ -68,7 +69,7 @@ Examples:
 				if err := installClaudeCode(cmd, abs, scope); err != nil {
 					return err
 				}
-				return applyClaudeCodePatches(cmd, patchAgents, withClaudeMD, withHook)
+				return applyClaudeCodePatches(cmd, patchAgents, withClaudeMD, withHook, codec)
 			case "cursor":
 				return installCursor(cmd, abs, scope)
 			case "codex":
@@ -86,19 +87,21 @@ Examples:
 		"claude-code only: append (or update) a keeba section in ~/.claude/CLAUDE.md telling main session to use keeba tools directly and NOT dispatch code-lookup investigations to sub-agents (which lack MCP access).")
 	cmd.Flags().BoolVar(&withHook, "with-hook", false,
 		"claude-code only: register a UserPromptSubmit hook that runs `keeba context` on every prompt and injects the symbol-graph evidence as additionalContext. Invisible to the user — agent sees the file:line grounding before it picks any tool. Closes the prompt-nudge gap that --patch-agents + --with-claude-md leave open.")
+	cmd.Flags().StringVar(&codec, "codec", "",
+		"claude-code only: rewrite ~/.claude.json so keeba's MCP server runs with the given response codec — `full` (default; full Symbol per row) or `lean` (interned codes + minimal metadata; agent calls `expand` for sig/doc on demand). Empty = leave config alone. Restart Claude Code for the change to take effect.")
 	_ = cmd.MarkFlagRequired("tool")
 	return cmd
 }
 
 // applyClaudeCodePatches applies the optional --patch-agents,
-// --with-claude-md, and --with-hook fixes after the MCP server
-// registration succeeds. Each patch is idempotent — re-running prints
-// "no change" instead of duplicating. Failures are surfaced but don't
-// roll back the MCP registration.
-func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD, withHook bool) error {
-	if !patchAgents && !withClaudeMD && !withHook {
+// --with-claude-md, --with-hook, and --codec fixes after the MCP
+// server registration succeeds. Each patch is idempotent — re-running
+// prints "no change" instead of duplicating. Failures are surfaced
+// but don't roll back the MCP registration.
+func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD, withHook bool, codec string) error {
+	if !patchAgents && !withClaudeMD && !withHook && codec == "" {
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(),
-			"tip: sub-agents (general-purpose Task) lack MCP access by default. Re-run with --patch-agents --with-claude-md --with-hook to make Claude Code actually use keeba on every code-lookup question (the --with-hook flag pre-grounds every prompt with symbol-graph evidence — invisible, no nudge required).")
+			"tip: sub-agents (general-purpose Task) lack MCP access by default. Re-run with --patch-agents --with-claude-md --with-hook to make Claude Code actually use keeba on every code-lookup question (the --with-hook flag pre-grounds every prompt with symbol-graph evidence — invisible, no nudge required). Add --codec lean to enable the L2 lean codec for find_def.")
 		return nil
 	}
 	home, err := os.UserHomeDir()
@@ -132,6 +135,20 @@ func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD, withH
 		} else {
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 				"%s already has the keeba section (no change)\n", path)
+		}
+	}
+	if codec != "" {
+		path := filepath.Join(home, ".claude.json")
+		changed, err := syncClaudeCodeCodec(path, codec)
+		if err != nil {
+			return fmt.Errorf("sync codec: %w", err)
+		}
+		if changed {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"set keeba MCP codec to %q in %s — restart Claude Code to pick it up\n", codec, path)
+		} else {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"%s already on codec %q (no change)\n", path, codec)
 		}
 	}
 	if withHook {

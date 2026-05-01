@@ -173,6 +173,116 @@ func TestAppendKeebaClaudeMD_Idempotent(t *testing.T) {
 	}
 }
 
+func TestSyncClaudeCodeCodec_AddsLeanFlag(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "claude.json")
+	original := []byte(`{
+  "mcpServers": {
+    "keeba": {
+      "command": "/usr/local/bin/keeba",
+      "args": ["mcp", "serve", "--wiki-root", "/home/ali/repo"]
+    }
+  }
+}`)
+	if err := os.WriteFile(path, original, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	changed, err := syncClaudeCodeCodec(path, "lean")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !changed {
+		t.Errorf("expected change=true on first lean apply")
+	}
+	body, _ := os.ReadFile(path)
+	if !strings.Contains(string(body), `"--codec"`) || !strings.Contains(string(body), `"lean"`) {
+		t.Errorf("settings.json missing codec args:\n%s", body)
+	}
+	// Existing args (mcp / serve / --wiki-root) must survive.
+	for _, want := range []string{`"mcp"`, `"serve"`, `"--wiki-root"`, `"/home/ali/repo"`} {
+		if !strings.Contains(string(body), want) {
+			t.Errorf("existing arg %q lost:\n%s", want, body)
+		}
+	}
+}
+
+func TestSyncClaudeCodeCodec_FullStripsExisting(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "claude.json")
+	original := []byte(`{
+  "mcpServers": {
+    "keeba": {
+      "command": "/usr/local/bin/keeba",
+      "args": ["mcp", "serve", "--wiki-root", "/r", "--codec", "lean"]
+    }
+  }
+}`)
+	_ = os.WriteFile(path, original, 0o644)
+	changed, err := syncClaudeCodeCodec(path, "full")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !changed {
+		t.Errorf("expected change=true when stripping prior lean codec")
+	}
+	body, _ := os.ReadFile(path)
+	if strings.Contains(string(body), `"--codec"`) {
+		t.Errorf("--codec flag should be stripped on full mode:\n%s", body)
+	}
+}
+
+func TestSyncClaudeCodeCodec_Idempotent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "claude.json")
+	_ = os.WriteFile(path, []byte(`{
+  "mcpServers": {"keeba": {"command": "k", "args": ["mcp", "serve"]}}
+}`), 0o644)
+
+	if _, err := syncClaudeCodeCodec(path, "lean"); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := os.ReadFile(path)
+	changed, err := syncClaudeCodeCodec(path, "lean")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changed {
+		t.Errorf("re-applying same codec should be no-op")
+	}
+	second, _ := os.ReadFile(path)
+	if string(first) != string(second) {
+		t.Errorf("idempotent re-apply changed bytes")
+	}
+}
+
+func TestSyncClaudeCodeCodec_EmptyNoOp(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "claude.json")
+	original := []byte(`{"mcpServers":{"keeba":{"command":"k","args":["mcp","serve"]}}}`)
+	_ = os.WriteFile(path, original, 0o644)
+	changed, err := syncClaudeCodeCodec(path, "")
+	if err != nil {
+		t.Errorf("empty codec should not error: %v", err)
+	}
+	if changed {
+		t.Errorf("empty codec should not change file")
+	}
+	body, _ := os.ReadFile(path)
+	if string(body) != string(original) {
+		t.Errorf("empty codec mutated file")
+	}
+}
+
+func TestSyncClaudeCodeCodec_RejectsUnknown(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "claude.json")
+	_ = os.WriteFile(path, []byte(`{"mcpServers":{"keeba":{"command":"k","args":["mcp","serve"]}}}`), 0o644)
+	_, err := syncClaudeCodeCodec(path, "weird")
+	if err == nil {
+		t.Errorf("expected error on unknown codec value")
+	}
+}
+
 func TestInstallUserPromptSubmitHook_FreshFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "settings.json")
