@@ -117,6 +117,13 @@ on cache_read alone. The remaining wins come from cutting output bloat.
 - **Conclusion first.** Lead with the answer. Evidence cites follow.
   Multi-step reasoning stays in your head — write the conclusion, not
   the chain-of-thought, unless the user asks for the derivation.
+- **NO prose between tool calls.** The human reads the final answer,
+  not progress markers. Skip "Found X. Now checking Y.", "Confirmed
+  dupe. Looking at next path.", and every other transition line.
+  Tool call → tool result → next tool call → final consolidated
+  answer. Inter-tool narration is a 20-40% slice of investigation
+  output that nobody reads; eliminating it is the lever that breaks
+  past the per-prompt savings ceiling.
 
 Fallback: if a keeba tool returns ` + "`\"no symbol graph in this directory — run keeba compile first\"`" + `,
 mention it once to the user (a one-time suggestion to run ` + "`keeba compile`" + `)

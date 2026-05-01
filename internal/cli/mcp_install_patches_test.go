@@ -333,6 +333,12 @@ func TestKeebaCLAUDEMDSection_AnswerDisciplinePhrasesPresent(t *testing.T) {
 		"Quote tool-result rows verbatim",
 		"Conclusion first",
 		"50× cache_read",
+		// Inter-tool silence — the rule that targets progress-marker
+		// noise. Output-style enforces this in its system-prompt layer;
+		// CLAUDE.md mirrors it for sessions where the user hasn't
+		// activated /output-style keeba.
+		"NO prose between tool calls",
+		"final consolidated",
 	} {
 		if !strings.Contains(keebaCLAUDEMDSection, want) {
 			t.Errorf("keebaCLAUDEMDSection missing answer-discipline phrase %q", want)
