@@ -183,10 +183,27 @@ func applyClaudeCodePatches(cmd *cobra.Command, patchAgents, withClaudeMD, withH
 		}
 		if changed {
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
-				"installed keeba output style at %s — activate per-session with `/output-style keeba` (suppresses preamble + tool-result restatement + closing summaries; output tokens drop, dollar cost drops with them)\n", path)
+				"installed keeba output style at %s\n", path)
 		} else {
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
 				"%s already has the keeba output style (no change)\n", path)
+		}
+		// Also flip the user's settings.json so the style is *active*
+		// on every session — the file alone does nothing, the slash
+		// command was renamed/removed in Claude Code v2.x, settings.json
+		// is the only stable activation surface. Without this step the
+		// install is a UX cliff: file on disk, no effect.
+		settingsPath := filepath.Join(home, ".claude", "settings.json")
+		activated, err := activateKeebaOutputStyle(settingsPath)
+		if err != nil {
+			return fmt.Errorf("activate output style: %w", err)
+		}
+		if activated {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"set outputStyle=keeba in %s — active on next Claude Code launch (terse style suppresses preamble + restatement + inter-tool prose; tokens drop, dollar cost follows)\n", settingsPath)
+		} else {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(),
+				"%s already has outputStyle=keeba (no change)\n", settingsPath)
 		}
 	}
 	return nil

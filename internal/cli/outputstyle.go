@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -141,6 +143,52 @@ func installKeebaOutputStyle(path string) (bool, error) {
 		return false, err
 	}
 	if err := os.WriteFile(path, []byte(keebaOutputStyle), 0o644); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// activateKeebaOutputStyle sets `outputStyle: "keeba"` in the user's
+// Claude Code settings.json so the style is active on every session
+// without the user having to type a slash command. v2.x of Claude Code
+// removed (or renamed) the per-session `/output-style <name>` slash
+// command — settings.json is the only stable activation surface across
+// versions. Other keys are preserved (theme, hooks, effortLevel, etc.).
+//
+// Idempotent: re-runs return (changed=false, nil) when the field is
+// already set to "keeba".
+//
+// Without this step, --with-output-style only drops the file on disk
+// and the user is left wondering why their session still emits the old
+// chatty style. Real reproducible UX cliff — fixing it inside the
+// install path, not in docs.
+func activateKeebaOutputStyle(settingsPath string) (bool, error) {
+	body, err := os.ReadFile(settingsPath) //nolint:gosec
+	if err != nil && !os.IsNotExist(err) {
+		return false, err
+	}
+
+	settings := map[string]any{}
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, &settings); err != nil {
+			return false, fmt.Errorf("parse %s: %w", settingsPath, err)
+		}
+	}
+
+	if cur, _ := settings["outputStyle"].(string); cur == "keeba" {
+		return false, nil
+	}
+	settings["outputStyle"] = "keeba"
+
+	out, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return false, err
+	}
+	out = append(out, '\n')
+	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o755); err != nil {
+		return false, err
+	}
+	if err := os.WriteFile(settingsPath, out, 0o644); err != nil {
 		return false, err
 	}
 	return true, nil

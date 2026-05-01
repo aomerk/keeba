@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,6 +74,117 @@ func TestInstallKeebaOutputStyle_OverwritesStale(t *testing.T) {
 	body, _ := os.ReadFile(path)
 	if string(body) != keebaOutputStyle {
 		t.Errorf("stale content not replaced — current canonical not written:\n%s", body)
+	}
+}
+
+func TestActivateKeebaOutputStyle_FreshFile(t *testing.T) {
+	// settings.json doesn't exist yet — activation must create it with
+	// just the outputStyle key. This is the new-user path.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "settings.json")
+	changed, err := activateKeebaOutputStyle(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !changed {
+		t.Errorf("expected change=true on fresh file")
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("settings.json not written: %v", err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("settings.json not valid JSON: %v", err)
+	}
+	if got["outputStyle"] != "keeba" {
+		t.Errorf("outputStyle field = %v, want \"keeba\"", got["outputStyle"])
+	}
+}
+
+func TestActivateKeebaOutputStyle_PreservesExistingSettings(t *testing.T) {
+	// Real-world settings.json has unrelated keys (theme, hooks,
+	// effortLevel, etc.). Activation must merge, not clobber. If we
+	// blow away their hooks config, we'd silently break the
+	// UserPromptSubmit hook the same install just registered.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "settings.json")
+	original := `{
+  "theme": "dark",
+  "effortLevel": "high",
+  "hooks": {
+    "UserPromptSubmit": [{"hooks":[{"type":"command","command":"keeba hook user-prompt-submit"}]}]
+  }
+}`
+	if err := os.WriteFile(path, []byte(original), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := activateKeebaOutputStyle(path); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := os.ReadFile(path)
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("settings.json not valid JSON after activation: %v", err)
+	}
+	if got["outputStyle"] != "keeba" {
+		t.Errorf("outputStyle missing or wrong: %v", got["outputStyle"])
+	}
+	if got["theme"] != "dark" {
+		t.Errorf("theme clobbered: %v", got["theme"])
+	}
+	if got["effortLevel"] != "high" {
+		t.Errorf("effortLevel clobbered: %v", got["effortLevel"])
+	}
+	if got["hooks"] == nil {
+		t.Errorf("hooks dropped — would silently break UserPromptSubmit hook")
+	}
+}
+
+func TestActivateKeebaOutputStyle_Idempotent(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "settings.json")
+	if _, err := activateKeebaOutputStyle(path); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := os.ReadFile(path)
+	changed, err := activateKeebaOutputStyle(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changed {
+		t.Errorf("second activation should be no-op")
+	}
+	second, _ := os.ReadFile(path)
+	if string(first) != string(second) {
+		t.Errorf("idempotent activation changed bytes")
+	}
+}
+
+func TestActivateKeebaOutputStyle_OverwritesDifferentStyle(t *testing.T) {
+	// User had a different output style set; re-running install with
+	// --with-output-style replaces it with keeba. This is the
+	// "intentional re-install" path — don't preserve a stale value.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "settings.json")
+	if err := os.WriteFile(path, []byte(`{"outputStyle":"verbose","theme":"dark"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	changed, err := activateKeebaOutputStyle(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !changed {
+		t.Errorf("expected change=true when overwriting different style")
+	}
+	body, _ := os.ReadFile(path)
+	var got map[string]any
+	_ = json.Unmarshal(body, &got)
+	if got["outputStyle"] != "keeba" {
+		t.Errorf("outputStyle = %v, want \"keeba\"", got["outputStyle"])
+	}
+	if got["theme"] != "dark" {
+		t.Errorf("theme dropped during overwrite: %v", got["theme"])
 	}
 }
 
