@@ -88,6 +88,12 @@ func TestKeebaOutputStyle_PinsCriticalPhrases(t *testing.T) {
 		"Conclusion first",
 		"Forbidden filler",
 		"/output-style keeba",
+		// Inter-tool silence — the lever that targets the 20-40%
+		// slice of investigation output spent on progress markers
+		// nobody reads. Pin so future edits can't quietly soften it.
+		"Silence between tool calls",
+		"Do NOT write transition prose between tool calls",
+		"ONE consolidated answer block",
 	} {
 		if !strings.Contains(keebaOutputStyle, want) {
 			t.Errorf("keebaOutputStyle missing phrase %q", want)

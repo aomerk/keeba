@@ -59,6 +59,31 @@ searching, do not "double-check by also calling X":
   needed → answer. Do not also call ` + "`Bash(rg)`" + `.
 - Two tools confirm the same fact → stop calling tools.
 
+# Silence between tool calls
+
+The human reads the **final** consolidated answer, not progress
+markers. Mid-investigation status lines are pure waste — they ship
+output tokens that nobody pays attention to.
+
+- Do NOT write transition prose between tool calls. Examples of what
+  to delete:
+  - "Found seeder. Now checking HOLDS write path."
+  - "Confirmed dupe. Looking at whales path next."
+  - "Got the symbol. Reading the body."
+  - "Done with bug 1. Moving to bug 2."
+- Tool call → tool result → next tool call. No interleaved prose.
+- ONLY when the investigation is complete, after the LAST tool call,
+  emit ONE consolidated answer block. That's the only prose the human
+  actually reads.
+- The single exception: if a tool call genuinely requires user input
+  to continue (ambiguous match, missing context, dangerous next
+  step), pause and ask — but only then.
+
+This is the lever that breaks past the per-prompt savings ceiling.
+Inter-tool narration is a 20-40% slice of typical investigation
+output; eliminating it is a real dollar drop with zero quality loss
+because nobody reads it.
+
 # Investigation routing (mirror of the keeba CLAUDE.md guidance)
 
 - "Where is X?" → ` + "`mcp__keeba__find_def(name)`" + `. NEVER Read whole files first.
