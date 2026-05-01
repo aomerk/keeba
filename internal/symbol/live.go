@@ -29,6 +29,7 @@ type LiveIndex struct {
 	idx             *Index
 	byName          map[string][]Symbol
 	callersByCallee map[string][]CallEdge // inverse index for find_callers
+	refsByCallee    map[string][]RefEdge  // inverse index for find_refs
 	bm25            *BM25Index            // BM25 over name+sig+doc — search_symbols
 
 	watcher  *fsnotify.Watcher
@@ -60,6 +61,7 @@ func NewLiveIndex(repoRoot string) (*LiveIndex, error) {
 		idx:             &idx,
 		byName:          buildByName(idx.Symbols),
 		callersByCallee: buildCallersByCallee(idx.Edges),
+		refsByCallee:    buildRefsByCallee(idx.Refs),
 		bm25:            BuildBM25Index(idx.Symbols),
 		watcher:         fw,
 		flushDur:        30 * time.Second,
@@ -88,6 +90,16 @@ func buildCallersByCallee(edges []CallEdge) map[string][]CallEdge {
 	out := make(map[string][]CallEdge, len(edges))
 	for _, e := range edges {
 		out[e.Callee] = append(out[e.Callee], e)
+	}
+	return out
+}
+
+// buildRefsByCallee inverts the ref graph for find_refs. Same shape as
+// buildCallersByCallee but keyed on the type/embed referent.
+func buildRefsByCallee(refs []RefEdge) map[string][]RefEdge {
+	out := make(map[string][]RefEdge, len(refs))
+	for _, r := range refs {
+		out[r.Callee] = append(out[r.Callee], r)
 	}
 	return out
 }
@@ -156,7 +168,7 @@ func (li *LiveIndex) handleEvent(ev fsnotify.Event) {
 
 	switch {
 	case ev.Op&(fsnotify.Remove|fsnotify.Rename) != 0:
-		li.replaceFile(rel, nil, nil)
+		li.replaceFile(rel, nil, nil, nil)
 
 	case ev.Op&(fsnotify.Write|fsnotify.Create) != 0:
 		// Skip non-regular files (dirs, sockets, etc.).
@@ -173,15 +185,17 @@ func (li *LiveIndex) handleEvent(ev fsnotify.Event) {
 			return
 		}
 		edges := ExtractCalls(rel, src)
-		li.replaceFile(rel, syms, edges)
+		refs := ExtractRefs(rel, src)
+		li.replaceFile(rel, syms, edges, refs)
 	}
 }
 
-// replaceFile swaps every symbol AND every outgoing call edge whose
-// origin is rel for the new slices (which may be empty for deletes).
-// Rebuilds byName + callersByCallee. Single big Lock — keeps the read
-// path lock-free except for one RLock per query.
-func (li *LiveIndex) replaceFile(rel string, freshSyms []Symbol, freshEdges []CallEdge) {
+// replaceFile swaps every symbol AND every outgoing call/ref edge
+// whose origin is rel for the new slices (which may be empty for
+// deletes). Rebuilds byName + callersByCallee + refsByCallee + BM25.
+// Single big Lock — keeps the read path lock-free except for one
+// RLock per query.
+func (li *LiveIndex) replaceFile(rel string, freshSyms []Symbol, freshEdges []CallEdge, freshRefs []RefEdge) {
 	li.mu.Lock()
 	defer li.mu.Unlock()
 
@@ -205,6 +219,16 @@ func (li *LiveIndex) replaceFile(rel string, freshSyms []Symbol, freshEdges []Ca
 	edges = append(edges, freshEdges...)
 	li.idx.Edges = edges
 
+	// Refs (same drop-then-append pattern keyed on CallerFile)
+	refs := li.idx.Refs[:0:0]
+	for _, r := range li.idx.Refs {
+		if r.CallerFile != rel {
+			refs = append(refs, r)
+		}
+	}
+	refs = append(refs, freshRefs...)
+	li.idx.Refs = refs
+
 	// Counters
 	files := map[string]struct{}{}
 	for _, s := range syms {
@@ -213,10 +237,12 @@ func (li *LiveIndex) replaceFile(rel string, freshSyms []Symbol, freshEdges []Ca
 	li.idx.NumFiles = len(files)
 	li.idx.NumSymbols = len(syms)
 	li.idx.NumEdges = len(edges)
+	li.idx.NumRefs = len(refs)
 
 	// Indexes
 	li.byName = buildByName(syms)
 	li.callersByCallee = buildCallersByCallee(edges)
+	li.refsByCallee = buildRefsByCallee(refs)
 	li.bm25 = BuildBM25Index(syms)
 	li.dirty = true
 }
@@ -284,6 +310,21 @@ func (li *LiveIndex) CallersOf(name string) []CallEdge {
 		return nil
 	}
 	out := make([]CallEdge, len(src))
+	copy(out, src)
+	return out
+}
+
+// RefsOf returns the type/embed reference edges where Callee==name.
+// Used by the find_refs MCP tool — the type-and-embed counterpart to
+// CallersOf. Returns a copy (safe to mutate).
+func (li *LiveIndex) RefsOf(name string) []RefEdge {
+	li.mu.RLock()
+	defer li.mu.RUnlock()
+	src := li.refsByCallee[name]
+	if len(src) == 0 {
+		return nil
+	}
+	out := make([]RefEdge, len(src))
 	copy(out, src)
 	return out
 }

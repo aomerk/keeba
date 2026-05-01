@@ -70,6 +70,7 @@ var DefaultMCPQueries = []MCPQuery{
 	{Label: "grep_symbols 'os.Getenv' (literal)", Tool: "grep_symbols", Args: map[string]any{"pattern": "os.Getenv", "literal": true, "limit": 25}},
 	{Label: "grep_symbols 'context.Context' (literal)", Tool: "grep_symbols", Args: map[string]any{"pattern": "context.Context", "literal": true, "limit": 25}},
 	{Label: "find_callers main", Tool: "find_callers", Args: map[string]any{"name": "main", "limit": 25}},
+	{Label: "find_refs Block", Tool: "find_refs", Args: map[string]any{"name": "Block", "limit": 25}},
 	{Label: "tests_for Run", Tool: "tests_for", Args: map[string]any{"name": "Run"}},
 	{Label: "summary cmd/", Tool: "summary", Args: map[string]any{"file": "cmd/", "limit": 50}},
 }

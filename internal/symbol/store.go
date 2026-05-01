@@ -29,8 +29,10 @@ type Index struct {
 	NumFiles      int        `json:"num_files"`
 	NumSymbols    int        `json:"num_symbols"`
 	NumEdges      int        `json:"num_edges"`
+	NumRefs       int        `json:"num_refs"`
 	Symbols       []Symbol   `json:"symbols"`
 	Edges         []CallEdge `json:"edges,omitempty"`
+	Refs          []RefEdge  `json:"refs,omitempty"`
 }
 
 // IndexPath returns the canonical .keeba/symbols.json path for the
@@ -87,6 +89,10 @@ func Compile(repoRoot, writeRoot string) (Index, error) {
 	if err != nil {
 		return Index{}, err
 	}
+	refs, err := ExtractRefsRepo(abs)
+	if err != nil {
+		return Index{}, err
+	}
 
 	files := map[string]struct{}{}
 	for _, s := range syms {
@@ -94,14 +100,16 @@ func Compile(repoRoot, writeRoot string) (Index, error) {
 	}
 
 	idx := Index{
-		SchemaVersion: 2,
+		SchemaVersion: 3,
 		GeneratedAt:   time.Now().UTC(),
 		RepoRoot:      abs,
 		NumFiles:      len(files),
 		NumSymbols:    len(syms),
 		NumEdges:      len(edges),
+		NumRefs:       len(refs),
 		Symbols:       syms,
 		Edges:         edges,
+		Refs:          refs,
 	}
 	if err := Save(writeRoot, idx); err != nil {
 		return idx, err

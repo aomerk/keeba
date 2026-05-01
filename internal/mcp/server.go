@@ -310,6 +310,34 @@ func (s *Server) listTools() []map[string]any {
 			},
 		},
 		{
+			"name":        "find_refs",
+			"description": "Return every type / embed reference to a symbol from the precompiled ref graph. Pairs with find_callers (which covers calls): together they answer 'what would break if I rename this?'. find_callers alone misses type usage in fields/params/returns/composite literals/type assertions/embedded types — find_refs closes that gap. Go-only in v1.",
+			"inputSchema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"name": map[string]any{
+						"type":        "string",
+						"description": "Bare symbol name. Exact match.",
+					},
+					"kinds": map[string]any{
+						"type":        "array",
+						"description": "Optional ref-kind filter. Allowed: 'type' (var/param/return/field/composite/assertion), 'embed' (anonymous fields). Empty array = all kinds.",
+						"items":       map[string]any{"type": "string"},
+					},
+					"file": map[string]any{
+						"type":        "string",
+						"description": "Optional file or directory prefix to scope results.",
+					},
+					"limit": map[string]any{
+						"type":        "integer",
+						"description": "Max results (default 25, max 200).",
+						"default":     25,
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+		{
 			"name":        "find_callers",
 			"description": "Return every call site of a symbol from the precompiled call graph. Pairs with find_def: find_def says 'X is here', find_callers says 'X is called from these N sites'. Lets the agent answer 'what would break if I rename X' in two MCP calls instead of a grep loop.",
 			"inputSchema": map[string]any{
@@ -407,6 +435,8 @@ func (s *Server) toolsCall(raw json.RawMessage) rpcResponse {
 		resp = s.toolGrepSymbols(env.Arguments)
 	case "find_callers":
 		resp = s.toolFindCallers(env.Arguments)
+	case "find_refs":
+		resp = s.toolFindRefs(env.Arguments)
 	case "tests_for":
 		resp = s.toolTestsFor(env.Arguments)
 	case "summary":
@@ -444,6 +474,7 @@ func (s *Server) altByTool() map[string]func(root string, args json.RawMessage) 
 		"grep_symbols":   s.grepSymbolsAlternative,
 		"find_def":       s.findDefAlternative,
 		"find_callers":   s.findCallersAlternative,
+		"find_refs":      s.findRefsAlternative,
 		"search_symbols": s.searchSymbolsAlternative,
 		"summary":        s.summaryAlternative,
 		"tests_for":      s.testsForAlternative,

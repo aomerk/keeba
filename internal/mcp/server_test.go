@@ -86,7 +86,7 @@ func TestToolsList(t *testing.T) {
 	for _, t := range tools {
 		gotNames[t.(map[string]any)["name"].(string)] = true
 	}
-	for _, want := range []string{"query_documentation", "find_def", "search_symbols", "grep_symbols", "tests_for", "summary"} {
+	for _, want := range []string{"query_documentation", "find_def", "search_symbols", "grep_symbols", "find_refs", "tests_for", "summary"} {
 		if !gotNames[want] {
 			t.Errorf("missing tool %q in tools/list, got %v", want, gotNames)
 		}
