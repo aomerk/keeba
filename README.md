@@ -4,9 +4,9 @@
 
 # keeba
 
-**Your AI tools are reading 50–2000× more bytes than they need to. keeba fixes that.**
+**~30% cheaper Claude Code sessions on real codebases. Same answer, fewer tokens. Verified, not vibes.**
 
-A one-command bridge between your codebase and the AI tools you already use. Schema-clean wiki, drift-checked citations, MCP server out of the box, ingest agents that actually run. Pure Go. MIT.
+A one-command bridge between your codebase and the AI tools you already use. Symbol graph + MCP server out of the box, schema-clean wiki, drift-checked citations, ingest agents that actually run. Pure Go. MIT.
 
 [![CI](https://github.com/aomerk/keeba/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/aomerk/keeba/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/aomerk/keeba?include_prereleases&color=fb923c&label=release)](https://github.com/aomerk/keeba/releases)
@@ -28,19 +28,41 @@ A one-command bridge between your codebase and the AI tools you already use. Sch
 ---
 
 ```text
-keeba: 2465.9× cheaper, 80.1× faster (5 questions; byte-count mode)
+keeba arm:    $1.45  (693k cache_read, 10.3k output, 2m47s API)
+no-keeba arm: $2.19  (1.10M cache_read, 12.4k output, 3m38s API)
+              ─────
+              −34% per session, both arms found the same 2 bugs at the same file:line cites
 ```
 
-— measured on Karpathy's [`llm.c`](https://github.com/karpathy/llm.c), recipe + numbers checked into [`examples/llm-c/`](examples/llm-c/).
+— A real Slack-thread bug investigation, run twice in Claude Code (Opus 4.7) on a Go indexer codebase. Full receipt + reproduce steps in [`bench/results/risk-graph-indexer-A-B.md`](bench/results/risk-graph-indexer-A-B.md).
 
 ---
 
-## 60 seconds, end to end
+## 60 seconds, end to end (symbol graph — the −34% path)
 
 ```bash
 # install
 go install github.com/aomerk/keeba/cmd/keeba@latest
 
+# point at any code repo and compile its symbol graph
+cd ~/my-go-repo
+keeba compile .
+
+# wire it into Claude Code AND apply the agent / CLAUDE.md patches that
+# make Claude actually use keeba on every code-lookup question.
+# (the install registers the MCP server; the two flags fix the UX cliff
+# where MCP-registered-but-never-invoked is the default failure mode)
+keeba mcp install --tool claude-code --patch-agents --with-claude-md
+
+# restart Claude Code, then ask any "where is X / what calls Y / what
+# tests cover Z" question. /cost after to see the receipt.
+```
+
+Restart matters — Claude only re-reads MCP config and CLAUDE.md on launch.
+
+## 60 seconds, end to end (wiki — for human-curated docs)
+
+```bash
 # bootstrap a wiki from any codebase you already have
 keeba init my-wiki --from-repo ../my-codebase
 cd my-wiki
@@ -48,12 +70,11 @@ cd my-wiki
 # wire it into Claude Code (or Cursor / Codex)
 keeba mcp install --tool claude-code
 
-# now Claude Code can search and answer over your wiki via MCP.
 # refresh whenever upstream docs change — your hand-edits are preserved
 keeba sync --from-repo ../my-codebase
 ```
 
-That's it. Open Claude Code in `my-wiki/`, ask "how does auth work in my-codebase?" — it queries keeba's MCP server, reads the relevant chunks, answers.
+Open Claude Code in `my-wiki/`, ask "how does auth work in my-codebase?" — it queries keeba's MCP server, reads the relevant chunks, answers.
 
 ---
 
@@ -98,20 +119,31 @@ The moat isn't retrieval. It's **the durable loop**: import → curate → sync 
 
 ## Real numbers
 
-### Wiki mode — `karpathy/llm.c`
+### What you actually save — real Claude Code A/B
 
-From [`examples/llm-c/_bench/2026-04-28.md`](examples/llm-c/_bench/2026-04-28.md), captured by running keeba against a fresh `karpathy/llm.c` clone:
+From [`bench/results/risk-graph-indexer-A-B.md`](bench/results/risk-graph-indexer-A-B.md). Same Slack-thread bug investigation prompt run twice in Claude Code (Opus 4.7, xhigh effort), once with keeba MCP wired up, once with `--strict-mcp-config /dev/null`. Both arms found the same two bugs at the same file:line citations.
 
-| | Wiki mode | Raw mode | Ratio |
+| | keeba arm | no-keeba arm | Δ |
 |---|---|---|---|
-| Tokens consumed | 122 | 300,840 | **2465× cheaper** |
-| Wall time | 36µs | 2.9ms | **80× faster** |
+| **Cost** | **$1.45** | **$2.19** | **−34% (saved $0.74)** |
+| **cache_read** | **693k** | **1.10M** | **−37% (407k tokens)** |
+| cache_write | 135k | 210k | −36% |
+| Output tokens | 10.3k | 12.4k | similar |
+| API time | 2m 47s | 3m 38s | keeba faster |
+| Wall time | 5m 25s | 4m 16s | keeba slower (more roundtrips) |
+| Bugs found | 2, file:line cites | 2, file:line cites | parity |
 
-That's the byte-count bench. The LLM bench (`keeba bench --llm anthropic`) gets the same shape with smaller absolute numbers because Claude reads context smarter than a `cat` does — the API token counts come straight from the response, plus the model self-rates its confidence 1–5.
+**Headline: ~30% cheaper per session, with quality parity.** `cache_read` is the lever — keeba surfaces evidence in 6 KiB markdown blobs instead of 100+ KiB whole-file reads.
 
-### Symbol graph — `ethereum/go-ethereum` (1,405 .go files)
+Caveats spelled out (not papered over):
 
-From [`bench/results/go-ethereum.md`](bench/results/go-ethereum.md), captured by running `keeba bench --mcp /path/to/go-ethereum`:
+- **One investigation, one prompt** — order-of-magnitude, your number will vary ±10%. Impact-tracing / "what depends on this" / onboarding prompts benefit most. Write-from-scratch prompts barely move.
+- **Wall time was slightly slower for keeba** (more tool roundtrips, smaller payloads each). API time and cost both went the right way.
+- **Even with keeba registered, Claude needed an explicit "use keeba" prompt nudge.** Without it, training-default Read/Grep wins. `keeba mcp install --tool claude-code --patch-agents --with-claude-md` adds CLAUDE.md guidance to steer the agent — the assertiveness of that guidance is iterating.
+
+### Tool-level capability — `ethereum/go-ethereum` (1,405 .go files)
+
+From [`bench/results/go-ethereum.md`](bench/results/go-ethereum.md). This measures the keeba **tools themselves** (returned-bytes vs what an unfiltered `read_file` agent would have pulled), not Claude session cost. Useful as a capacity sanity-check, not as a per-session savings claim — see the A/B table above for that.
 
 | Metric | Value |
 |---|---|
@@ -121,9 +153,9 @@ From [`bench/results/go-ethereum.md`](bench/results/go-ethereum.md), captured by
 | Index on disk | 27.6 MiB (~1.4 KiB/symbol) |
 | `bytes_returned` across 9 queries | 41.7 KiB |
 | `bytes_alternative` (read_file equivalent) | 29.7 MiB |
-| **Headline** | **721× cheaper, ~7.7M tokens saved** |
+| **Tool-level ratio** | **721× cheaper, ~7.7M alternative tokens** |
 
-Per-query latencies on this real workload: `find_def` 0 ms (hash lookup), `find_callers` 0 ms (inverted index), `search_symbols` 7–10 ms (BM25 over 20k docs), `summary` 14 ms, `tests_for` 31 ms, `grep_symbols` 20–245 ms (regex sweep over function bodies). Every per-query row reports both `Returned` and `Alternative` bytes — the receipt is honest, not a vibe.
+Per-query latencies: `find_def` 0 ms (hash lookup), `find_callers` 0 ms (inverted index), `search_symbols` 7–10 ms (BM25 over 20k docs), `summary` 14 ms, `tests_for` 31 ms, `grep_symbols` 20–245 ms (regex sweep over function bodies).
 
 Reproduce:
 
@@ -131,6 +163,17 @@ Reproduce:
 git clone --depth 1 https://github.com/ethereum/go-ethereum /tmp/go-ethereum
 keeba bench --mcp /tmp/go-ethereum
 ```
+
+### Wiki mode — `karpathy/llm.c`
+
+From [`examples/llm-c/_bench/2026-04-28.md`](examples/llm-c/_bench/2026-04-28.md). The original BM25-wiki vs raw-files bench. Same caveat as above: this is the wiki tool's capacity, not a per-session savings claim.
+
+| | Wiki mode | Raw mode | Ratio |
+|---|---|---|---|
+| Tokens consumed | 122 | 300,840 | **2465× tool-level cheaper** |
+| Wall time | 36µs | 2.9ms | **80× faster** |
+
+LLM bench (`keeba bench --llm anthropic`) gets the same shape with smaller absolute numbers — Claude reads context smarter than `cat` does. The model self-rates its confidence 1–5.
 
 ---
 
