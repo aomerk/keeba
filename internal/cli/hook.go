@@ -59,7 +59,10 @@ type hookSpecificOutput struct {
 const hookOutputCap = 8000
 
 func newUserPromptSubmitCmd() *cobra.Command {
-	var verbose bool
+	var (
+		verbose bool
+		codec   string
+	)
 	cmd := &cobra.Command{
 		Use:    "user-prompt-submit",
 		Short:  "Read UserPromptSubmit hook JSON on stdin, emit keeba-context block as additionalContext.",
@@ -69,17 +72,19 @@ func newUserPromptSubmitCmd() *cobra.Command {
 			// and a hook failure should never be more disruptive than no
 			// hook at all. We swallow every error and emit the empty-
 			// context response on the way out.
-			return runUserPromptSubmit(cmd.InOrStdin(), cmd.OutOrStdout(), cmd.ErrOrStderr(), verbose)
+			return runUserPromptSubmit(cmd.InOrStdin(), cmd.OutOrStdout(), cmd.ErrOrStderr(), verbose, codec)
 		},
 	}
 	cmd.Flags().BoolVar(&verbose, "verbose", false, "log decisions to stderr (hook output stays clean on stdout)")
+	cmd.Flags().StringVar(&codec, "codec", "symtab",
+		"output codec: `full` or `symtab` (default; LLM-bytecode L1 — symbol table defined once, references by code thereafter)")
 	return cmd
 }
 
 // runUserPromptSubmit is the testable core. Reads + parses input,
 // resolves the symbol-graph context, writes the JSON response.
 // Always returns nil so the cobra wrapper exits 0.
-func runUserPromptSubmit(stdin io.Reader, stdout, stderr io.Writer, verbose bool) error {
+func runUserPromptSubmit(stdin io.Reader, stdout, stderr io.Writer, verbose bool, codec string) error {
 	body, err := io.ReadAll(stdin)
 	if err != nil {
 		emitEmpty(stdout)
@@ -127,7 +132,7 @@ func runUserPromptSubmit(stdin io.Reader, stdout, stderr io.Writer, verbose bool
 		return nil
 	}
 
-	md := context.RenderMarkdown(rep)
+	md := renderForCodec(rep, codec)
 	if len(md) > hookOutputCap {
 		md = md[:hookOutputCap] + "\n\n_…truncated to hookOutputCap_\n"
 	}

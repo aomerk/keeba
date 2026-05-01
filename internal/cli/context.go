@@ -20,6 +20,7 @@ func newContextCmd() *cobra.Command {
 		repoPath string
 		jsonOut  bool
 		maxBytes int
+		codec    string
 	)
 	cmd := &cobra.Command{
 		Use:   "context [prompt...]",
@@ -53,7 +54,7 @@ Examples:
 				_, _ = fmt.Fprintln(out, string(b))
 				return nil
 			}
-			_, _ = fmt.Fprint(out, context.RenderMarkdown(rep))
+			_, _ = fmt.Fprint(out, renderForCodec(rep, codec))
 			return nil
 		},
 	}
@@ -63,5 +64,19 @@ Examples:
 		"emit JSON instead of markdown (for scripted consumers)")
 	cmd.Flags().IntVar(&maxBytes, "max-bytes", 0,
 		"cap the rendered markdown size (default 0 = no cap). Useful for piping into a tool with a limited context window.")
+	cmd.Flags().StringVar(&codec, "codec", "full",
+		"output codec: `full` (default — name + sig + doc per hit) or `symtab` (LLM-bytecode L1 — define symbols once at top, reference by code thereafter; ~30-40% smaller on hit-heavy prompts).")
 	return cmd
+}
+
+// renderForCodec dispatches between the human-readable and the
+// symtab-encoded markdown variants. Centralizes the codec selection so
+// both `keeba context` and the UserPromptSubmit hook share one path.
+func renderForCodec(rep context.Report, codec string) string {
+	switch codec {
+	case "symtab", "compact":
+		return context.RenderMarkdownCompact(rep)
+	default:
+		return context.RenderMarkdown(rep)
+	}
 }
