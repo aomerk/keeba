@@ -34,7 +34,7 @@ no-keeba arm: $2.19  (1.10M cache_read, 12.4k output, 3m38s API)
               −34% per session, both arms found the same 2 bugs at the same file:line cites
 ```
 
-— A real Slack-thread bug investigation, run twice in Claude Code (Opus 4.7) on a Go indexer codebase. Full receipt + reproduce steps in [`bench/results/risk-graph-indexer-A-B.md`](bench/results/risk-graph-indexer-A-B.md).
+— A real bug investigation, run twice in Claude Code (Opus 4.7) on a private Go codebase. Both arms found the same 2 bugs at the same file:line citations. Reproduce on yours: see the [Verify it on your repo](#verify-it-on-your-repo) section below.
 
 ---
 
@@ -121,7 +121,7 @@ The moat isn't retrieval. It's **the durable loop**: import → curate → sync 
 
 ### What you actually save — real Claude Code A/B
 
-From [`bench/results/risk-graph-indexer-A-B.md`](bench/results/risk-graph-indexer-A-B.md). Same Slack-thread bug investigation prompt run twice in Claude Code (Opus 4.7, xhigh effort), once with keeba MCP wired up, once with `--strict-mcp-config /dev/null`. Both arms found the same two bugs at the same file:line citations.
+A real bug-investigation prompt run twice in Claude Code (Opus 4.7, xhigh effort) on a private Go codebase, once with keeba MCP wired up, once with `--strict-mcp-config /dev/null`. Both arms found the same two bugs at the same file:line citations.
 
 | | keeba arm | no-keeba arm | Δ |
 |---|---|---|---|
@@ -140,6 +140,19 @@ Caveats spelled out (not papered over):
 - **One investigation, one prompt** — order-of-magnitude, your number will vary ±10%. Impact-tracing / "what depends on this" / onboarding prompts benefit most. Write-from-scratch prompts barely move.
 - **Wall time was slightly slower for keeba** (more tool roundtrips, smaller payloads each). API time and cost both went the right way.
 - **Even with keeba registered, Claude needed an explicit "use keeba" prompt nudge.** Without it, training-default Read/Grep wins. `keeba mcp install --tool claude-code --patch-agents --with-claude-md` adds CLAUDE.md guidance to steer the agent — the assertiveness of that guidance is iterating.
+
+#### Verify it on your repo
+
+Don't trust the headline — measure it on your own codebase:
+
+```bash
+keeba compile .                       # ~1s for 5k symbols
+keeba bench --hook-prompts $(pwd)     # 7-prompt panel, codec A/B
+```
+
+Reports per-prompt byte deltas + aggregate mean savings. **Privacy guard**: only basenames + metric counts cross into the output, never source content from your repo. Safe to run on private codebases.
+
+End-to-end `/cost` A/B in Claude Code is the real test — bytes saved on injection don't translate 1:1 to dollars saved (extra `find_def`/`read_chunk` round-trips eat some back). Same prompt, two terminals, `/cost` after each.
 
 ### Tool-level capability — `ethereum/go-ethereum` (1,405 .go files)
 
