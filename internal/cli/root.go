@@ -21,7 +21,7 @@ func NewRoot() *cobra.Command {
 	}
 	root.SetVersionTemplate("keeba " + Version + "\n")
 
-	root.PersistentFlags().String("wiki-root", "", "override wiki root (defaults to walking up for keeba.config.yaml)")
+	root.PersistentFlags().String("wiki-root", "", "override wiki root (defaults to walking up for keeba.config.yaml). For `mcp serve`, pass `auto` to resolve at startup from cwd by walking up for .keeba/symbols.json — install --tool claude-code defaults to this so the MCP server follows whichever indexed repo Claude Code is launched in.")
 
 	root.AddCommand(newLintCmd())
 	root.AddCommand(newDriftCmd())

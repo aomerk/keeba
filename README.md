@@ -49,8 +49,10 @@ cd ~/my-go-repo
 keeba compile .
 
 # wire it into Claude Code AND apply every UX patch keeba ships with.
-# (the install registers the MCP server; the four flags fix the routing
-# AND attack the output-token bloat that ceilings session savings.)
+# install defaults to `--wiki-root auto` — the MCP server resolves at
+# startup by walking up from the editor's cwd for .keeba/symbols.json,
+# so cross-repo investigations always hit the right symbol graph
+# (no more "MCP rooted at the wrong repo" silent fallback to grep).
 #   --patch-agents      — add mcp__keeba__* to user-defined sub-agents
 #   --with-claude-md    — assertive routing rules in ~/.claude/CLAUDE.md
 #   --with-hook         — pre-ground every prompt with symbol-graph evidence
@@ -62,6 +64,8 @@ keeba mcp install --tool claude-code \
 
 # restart Claude Code, then ask any "where is X / what calls Y / what
 # tests cover Z" question. /cost after to see the receipt.
+# Want to pin the install to a single repo regardless of editor cwd?
+# Pass --wiki-root-override /path/to/repo.
 ```
 
 Restart matters — Claude only re-reads MCP config and CLAUDE.md on launch.

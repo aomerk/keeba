@@ -126,6 +126,47 @@ func TestFindWikiRootMissReturnsEmpty(t *testing.T) {
 	}
 }
 
+func TestFindCodeGraphRootWalksUp(t *testing.T) {
+	// Symbol graph 3 levels up — the case `keeba mcp serve --wiki-root
+	// auto` actually has to handle when Claude Code is launched in a
+	// nested subdir of an indexed repo.
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".keeba"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	writeFile(t, filepath.Join(root, ".keeba", "symbols.json"), "{}\n")
+	deep := filepath.Join(root, "pkg", "indexer", "internal")
+	if err := os.MkdirAll(deep, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	got := FindCodeGraphRoot(deep)
+	want, _ := filepath.EvalSymlinks(root)
+	gotEval, _ := filepath.EvalSymlinks(got)
+	if gotEval != want {
+		t.Fatalf("FindCodeGraphRoot = %q, want %q", got, root)
+	}
+}
+
+func TestFindCodeGraphRootMissReturnsEmpty(t *testing.T) {
+	dir := t.TempDir()
+	if got := FindCodeGraphRoot(dir); got != "" {
+		t.Fatalf("FindCodeGraphRoot on dir without .keeba = %q, want empty", got)
+	}
+}
+
+func TestFindCodeGraphRootIgnoresDirEntry(t *testing.T) {
+	// `.keeba/symbols.json` must be a regular file, not a directory.
+	// Belt-and-suspenders against weird filesystems where a stray dir
+	// with the right name could otherwise short-circuit the walk.
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".keeba", "symbols.json"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if got := FindCodeGraphRoot(dir); got != "" {
+		t.Fatalf("FindCodeGraphRoot when symbols.json is a dir = %q, want empty (regular file required)", got)
+	}
+}
+
 func TestLoadInvalidYAMLReturnsError(t *testing.T) {
 	dir := t.TempDir()
 	writeFile(t, filepath.Join(dir, "keeba.config.yaml"), "name: [unclosed\n")
